@@ -3,6 +3,7 @@ package mas.agent
 import scala.util.Try
 import java.util.Properties
 import io.confluent.kafka.serializers.KafkaAvroSerializer
+import org.apache.kafka.clients.producer._
 
 case class AgentId(id: String)
 
@@ -24,7 +25,8 @@ trait AgentLike[T] {
 
 
 abstract class AbstractAgent[T](id: AgentId, brokers: List[String])(implicit serializer: Option[String] , deserializer: Option[String]) extends AgentLike[T] {
-    val propsForProducers: Map[String, Properties] = ???
+
+    val POOL = "GENERAL_AGENT_POOL"    
 
     def initProducersProperties: Map[String, Properties] = {
          val  propsString = new Properties()
@@ -45,8 +47,14 @@ abstract class AbstractAgent[T](id: AgentId, brokers: List[String])(implicit ser
         propsMessage.put("value.serializer", serializer)
         propsMessage.put("compression.type", "snappy")
 
-        Map("StringProp" -> propsString, "GeneralProp" -> propsMessage)
+        Map("stringProp" -> propsString, "generalProp" -> propsMessage)
 
+    }
+    val propsForProducers: Map[String, Properties] =  initProducersProperties
+
+    val producers = Map("stringProducer"-> new KafkaProducer[String, String], "agentMessageProducer"-> new KafkaProducer[String, AgentMessage[T]])
+    
+    override protected  def send(agentId: AgentId, agentMessage: AgentMessage[T]) = {
     }
 
      
