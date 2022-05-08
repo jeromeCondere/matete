@@ -1,0 +1,7 @@
+/.bsp/
+target/
+.vscode/
+.metals/
+.bloop/
+*.class
+*.bin
