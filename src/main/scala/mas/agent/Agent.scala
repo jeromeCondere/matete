@@ -1,4 +1,4 @@
-package mas.agent
+package com.matete.mas.agent
 
 import scala.util.Try
 import java.util.Properties
@@ -13,20 +13,26 @@ trait AgentLike[T] {
      * 
      ***/
     def send(agentId: AgentId, agentMessage: AgentMessage[T])
+    def send(agentId: AgentId, agentMessage: String)
     def sendPool(message: String)
     def receive(agentMessage: AgentMessage[T])
     def suicide(): Try[String]
-    def broadcast()
+    def broadcast(message: String)
     def forcedie()
+    def die()
     def join()
     def disconnect(agentId: AgentId)
     def start(initFunc: Unit)
+    def getTopic(agentId: AgentId): String = agentId.id+"-topic"
+    
 }
 
 
-abstract class AbstractAgent[T](id: AgentId, brokers: List[String])(implicit serializer: Option[String] , deserializer: Option[String]) extends AgentLike[T] {
+abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])(implicit serializer: Option[String] = None, deserializer: Option[String] = None) extends AgentLike[T] {
 
-    val POOL = "GENERAL_AGENT_POOL"    
+    val GENERAL_POOL = "GENERAL_AGENT_POOL"
+    val TOPIC = agentId.id + "-topic"
+        
 
     def initProducersProperties: Map[String, Properties] = {
          val  propsString = new Properties()
@@ -36,25 +42,64 @@ abstract class AbstractAgent[T](id: AgentId, brokers: List[String])(implicit ser
         propsString.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
         propsString.put("compression.type", "snappy")
 
-        val  propsMessage = new Properties()
-        propsMessage.put("bootstrap.servers", brokers.mkString(","))
+        val  propsAgentMessage = new Properties()
+        propsAgentMessage.put("bootstrap.servers", brokers.mkString(","))
   
-        propsMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        propsAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
         serializer match {
-            case Some(serializerClass) => propsMessage.put("key.serializer", serializerClass)
-            case None => propsMessage.put("key.serializer", "my avro") //use avro
+            case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
+            case None => propsAgentMessage.put("value.serializer", "my avro") //use avro
         }
-        propsMessage.put("value.serializer", serializer)
-        propsMessage.put("compression.type", "snappy")
+        propsAgentMessage.put("value.serializer", serializer)
+        propsAgentMessage.put("compression.type", "snappy")
 
-        Map("stringProp" -> propsString, "generalProp" -> propsMessage)
+        Map("stringProducerProperties" -> propsString, "generalProducerProperties" -> propsAgentMessage)
 
     }
     val propsForProducers: Map[String, Properties] =  initProducersProperties
 
-    val producers = Map("stringProducer"-> new KafkaProducer[String, String], "agentMessageProducer"-> new KafkaProducer[String, AgentMessage[T]])
+    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("stringProducerProperties"))
+    protected val agentMessageProducer = new KafkaProducer[String, AgentMessage[T]](propsForProducers("generalProducerProperties"))   
     
-    override protected  def send(agentId: AgentId, agentMessage: AgentMessage[T]) = {
+
+    def initConsumersProperties: Map[String, Properties] = {
+        val  propsConsumerString = new Properties()
+        propsConsumerString.put("bootstrap.servers", brokers.mkString(","))
+  
+        propsConsumerString.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+        propsConsumerString.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+
+        val  propsConsumerAgentMessage = new Properties()
+        propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
+  
+        propsConsumerAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        deserializer match {
+            case Some(deserializerClass) => propsConsumerAgentMessage.put("key.serializer", deserializerClass)
+            case None => propsConsumerAgentMessage.put("key.serializer", "my avro") //use avro
+        }
+        propsConsumerAgentMessage.put("value.serializer", serializer)
+
+        Map("stringConsumerProperties" -> propsConsumerString, "generaConsumerProperties" -> propsConsumerAgentMessage)
+ }    
+
+    override  def send(agentId: AgentId, agentMessage: AgentMessage[T]) = {
+        val record = new ProducerRecord(getTopic(agentId), agentId.id, agentMessage)
+
+        agentMessageProducer.send(record)
+    }
+
+
+   
+    override  def send(agentId: AgentId, agentMessage: String) = {
+        val record = new ProducerRecord(getTopic(agentId), agentId.id, agentMessage)
+        stringProducer.send(record)
+    }
+
+
+    override def broadcast(message: String): Unit = {
+                val record = new ProducerRecord(GENERAL_POOL, agentId.id, message)
+        stringProducer.send(record)
+        
     }
 
      
