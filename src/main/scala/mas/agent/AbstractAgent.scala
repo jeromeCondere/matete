@@ -4,6 +4,9 @@ import scala.util.Try
 import java.util.Properties
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer._
+import org.apache.kafka.clients.consumer._
+import  java.util
+import scala.collection.JavaConverters._
 
 case class AgentId(id: String)
 
@@ -12,6 +15,8 @@ trait AgentLike[T] {
      * send message to another agent
      * 
      ***/
+    def init: Unit
+    def run
     def send(agentId: AgentId, agentMessage: AgentMessage[T])
     def send(agentId: AgentId, agentMessage: String)
     def sendPool(message: String)
@@ -20,21 +25,26 @@ trait AgentLike[T] {
     def broadcast(message: String)
     def forcedie()
     def die()
-    def join()
+    def join(agentId: AgentId)
+    def join(agentIds: List[AgentId])
     def disconnect(agentId: AgentId)
-    def start(initFunc: Unit)
+    def run(initFunc: Unit)
     def getTopic(agentId: AgentId): String = agentId.id+"-topic"
+    def getTopicGroupBase(agentId: AgentId): String = getTopic(agentId)+"-group"
     
 }
 
 
-abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])(implicit serializer: Option[String] = None, deserializer: Option[String] = None) extends AgentLike[T] {
+abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
+(initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  
+    initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
+(implicit serializer: Option[String] = None, deserializer: Option[String] = None) extends AgentLike[T] {
 
     val GENERAL_POOL = "GENERAL_AGENT_POOL"
-    val TOPIC = agentId.id + "-topic"
+    val TOPIC = getTopic(agentId)
         
 
-    def initProducersProperties: Map[String, Properties] = {
+    def initDefaultProducersProperties: Map[String, Properties] = {
          val  propsString = new Properties()
         propsString.put("bootstrap.servers", brokers.mkString(","))
   
@@ -53,38 +63,57 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])(implici
         propsAgentMessage.put("value.serializer", serializer)
         propsAgentMessage.put("compression.type", "snappy")
 
-        Map("stringProducerProperties" -> propsString, "generalProducerProperties" -> propsAgentMessage)
+        Map("stringProducerProperties" -> propsString, "agentMessageProducerProperties" -> propsAgentMessage)
 
     }
-    val propsForProducers: Map[String, Properties] =  initProducersProperties
+    val propsForProducers: Map[String, Properties] =  initProducerProperties(initDefaultProducersProperties)
 
-    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("stringProducerProperties"))
-    protected val agentMessageProducer = new KafkaProducer[String, AgentMessage[T]](propsForProducers("generalProducerProperties"))   
-    
+ 
 
-    def initConsumersProperties: Map[String, Properties] = {
+    protected def initDefaultConsumersProperties: Map[String, Properties] = {
         val  propsConsumerString = new Properties()
         propsConsumerString.put("bootstrap.servers", brokers.mkString(","))
   
         propsConsumerString.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         propsConsumerString.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+        propsConsumerString.put("group.id", getTopicGroupBase(agentId)+"-classic")
+
 
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
   
-        propsConsumerAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringSerializer")
         deserializer match {
-            case Some(deserializerClass) => propsConsumerAgentMessage.put("key.serializer", deserializerClass)
+            case Some(deserializerClass) => propsConsumerAgentMessage.put("key.deserializer", deserializerClass)
             case None => propsConsumerAgentMessage.put("key.serializer", "my avro") //use avro
         }
         propsConsumerAgentMessage.put("value.serializer", serializer)
+        propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
 
-        Map("stringConsumerProperties" -> propsConsumerString, "generaConsumerProperties" -> propsConsumerAgentMessage)
- }    
+        Map("stringConsumerProperties" -> propsConsumerString, "agentMessageConsumerProperties" -> propsConsumerAgentMessage)
+    }  
+  
+    val propsForConsumer: Map[String, Properties] = initConsumersProperties(initDefaultConsumersProperties)
+
+
+
+    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("stringProducerProperties"))
+    protected val agentMessageProducer = new KafkaProducer[String, AgentMessage[T]](propsForProducers("agentMessageProducerProperties"))   
+
+    protected val stringConsumer = new KafkaConsumer[String, String](propsForConsumer("stringConsumerProperties"))
+    protected val agentMessageConsumer = new KafkaConsumer[String, AgentMessage[T]](propsForConsumer("agentMessageConsumerProperties")) 
+
+    override def join(agentId: AgentId) = {
+        agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))
+    
+    } 
+
+    override def join(agentIds: List[AgentId]) = {
+        agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
+    }  
 
     override  def send(agentId: AgentId, agentMessage: AgentMessage[T]) = {
         val record = new ProducerRecord(getTopic(agentId), agentId.id, agentMessage)
-
         agentMessageProducer.send(record)
     }
 
@@ -97,7 +126,7 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])(implici
 
 
     override def broadcast(message: String): Unit = {
-                val record = new ProducerRecord(GENERAL_POOL, agentId.id, message)
+        val record = new ProducerRecord(GENERAL_POOL, agentId.id, message)
         stringProducer.send(record)
         
     }
