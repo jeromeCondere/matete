@@ -16,15 +16,16 @@ trait AgentLike[T] {
      * 
      ***/
     def init: Unit
-    def run
-    def send(agentId: AgentId, agentMessage: AgentMessage[T])
+    def send(agentIdReceiver: AgentId, message: T)
     def send(agentId: AgentId, agentMessage: String)
     def sendPool(message: String)
-    def receive(agentMessage: AgentMessage[T])
-    def suicide(): Try[String]
+    def receive(agentMessages: List[AgentMessage[T]])
+    def receiveSimpleMessages(agentMessages: List[String])
+
+    def suicide: Unit
     def broadcast(message: String)
-    def forcedie()
-    def die()
+    def forcedie: Unit
+    def die: Unit
     def join(agentId: AgentId)
     def join(agentIds: List[AgentId])
     def disconnect(agentId: AgentId)
@@ -42,7 +43,9 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
 
     val GENERAL_POOL = "GENERAL_AGENT_POOL"
     val TOPIC = getTopic(agentId)
-        
+    protected var wantToDie: Boolean = false
+    protected val stringKeySuffix = "-str"
+     //TODO: add list of agent ids that are connected to the agent
 
     def initDefaultProducersProperties: Map[String, Properties] = {
          val  propsString = new Properties()
@@ -104,34 +107,41 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
     protected val agentMessageConsumer = new KafkaConsumer[String, AgentMessage[T]](propsForConsumer("agentMessageConsumerProperties")) 
 
     override def join(agentId: AgentId) = {
-        agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))
+        this.agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))
     
     } 
 
     override def join(agentIds: List[AgentId]) = {
-        agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
+        this.agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
     }  
 
-    override  def send(agentId: AgentId, agentMessage: AgentMessage[T]) = {
-        val record = new ProducerRecord(getTopic(agentId), agentId.id, agentMessage)
-        agentMessageProducer.send(record)
+    override  def send(agentIdReceiver: AgentId, message: T) = {
+        // get topic from receiver and then  send it
+        val record = new ProducerRecord(getTopic(agentIdReceiver), agentIdReceiver.id, AgentMessage(this.agentId, message))
+        this.agentMessageProducer.send(record)
     }
 
 
    
     override  def send(agentId: AgentId, agentMessage: String) = {
-        val record = new ProducerRecord(getTopic(agentId), agentId.id, agentMessage)
-        stringProducer.send(record)
+        val record = new ProducerRecord(getTopic(agentId)+this.stringKeySuffix, agentId.id, agentMessage)
+        this.stringProducer.send(record)
     }
 
 
     override def broadcast(message: String): Unit = {
-        val record = new ProducerRecord(GENERAL_POOL, agentId.id, message)
-        stringProducer.send(record)
+        val record = new ProducerRecord(this.GENERAL_POOL, agentId.id, message)
+        this.stringProducer.send(record)
         
+    }
+
+    override def die: Unit = {
+      this.agentMessageConsumer.close
+      this.stringConsumer.close
+      this.agentMessageProducer.close
+      this.stringProducer.close
     }
 
      
 
 }
-

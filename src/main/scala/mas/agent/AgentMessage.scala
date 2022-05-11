@@ -1,3 +1,3 @@
 package com.matete.mas.agent
 
-case class AgentMessage[T](agentId: String, message: T)
+case class AgentMessage[T](agentId: AgentId, message: T)
