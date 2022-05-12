@@ -32,7 +32,7 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
     def run(initFunc: Unit): Unit = {
         try{
             init
-                while(true){
+                while(wantToDie == false){
                     val recordsString = stringConsumer.poll(this.pollRate).asScala
                         .filter(c => c.key().endsWith(this.stringKeySuffix))
 
@@ -40,19 +40,34 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
                         record => record.value
                     }
 
-                    val recordsAgentMessage = stringConsumer.poll(this.pollRate).asScala
+                    receiveSimpleMessages(recordsStringList)
+                    
+                    val recordsAgentMessage = agentMessageConsumer.poll(this.pollRate).asScala
                         .filterNot(c => c.key().endsWith(this.stringKeySuffix))
                     
-                    recordsAgentMessage.filter(c => c.key().endsWith(this.stringKeySuffix))
+                    recordsAgentMessage.filterNot(c => c.key().endsWith(this.stringKeySuffix))
 
                     val recordsAgentMessageList = stringConsumer.poll(this.pollRate).iterator.asScala.toList.map{
                         record => record.value
                     }
+                    stringConsumer.commitAsync
+                    stringConsumer.commitAsync
+
+
+                    
                 }
             } finally {
                 die
             }
     }
     def sendPool(message: String): Unit = ???
-    def suicide() = { wantToDie = true}
+    def suicide() = { this.wantToDie = true}
+}
+object Agent {
+    def apply[T](agentId: AgentId, brokers: List[String])
+    (initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  
+    initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
+        (implicit serializer: Option[String] = None, deserializer: Option[String] = None): Agent[T] = {
+        new  Agent[T](agentId, brokers)(initProducerProperties, initConsumersProperties)(serializer, deserializer)
+    }
 }

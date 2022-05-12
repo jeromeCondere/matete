@@ -41,8 +41,8 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
     initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
 (implicit serializer: Option[String] = None, deserializer: Option[String] = None) extends AgentLike[T] {
 
-    val GENERAL_POOL = "GENERAL_AGENT_POOL"
-    val TOPIC = getTopic(agentId)
+    val GENERAL_POOL: String = "GENERAL_AGENT_POOL"
+    val TOPIC: String = getTopic(agentId)
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
      //TODO: add list of agent ids that are connected to the agent
@@ -63,7 +63,6 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
             case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
             case None => propsAgentMessage.put("value.serializer", "my avro") //use avro
         }
-        propsAgentMessage.put("value.serializer", serializer)
         propsAgentMessage.put("compression.type", "snappy")
 
         Map("stringProducerProperties" -> propsString, "agentMessageProducerProperties" -> propsAgentMessage)
@@ -90,7 +89,6 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
             case Some(deserializerClass) => propsConsumerAgentMessage.put("key.deserializer", deserializerClass)
             case None => propsConsumerAgentMessage.put("key.serializer", "my avro") //use avro
         }
-        propsConsumerAgentMessage.put("value.serializer", serializer)
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
 
         Map("stringConsumerProperties" -> propsConsumerString, "agentMessageConsumerProperties" -> propsConsumerAgentMessage)
@@ -141,6 +139,9 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
       this.agentMessageProducer.close
       this.stringProducer.close
     }
+
+    def forcedie: Unit = this.wantToDie = true
+
 
      
 
