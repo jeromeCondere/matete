@@ -61,7 +61,7 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         propsAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
         serializer match {
             case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
-            case None => propsAgentMessage.put("value.serializer", "my avro") //use avro
+            case None => propsAgentMessage.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer") //use avro
         }
         propsAgentMessage.put("compression.type", "snappy")
 
@@ -84,10 +84,10 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
   
-        propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringSerializer")
+        propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         deserializer match {
-            case Some(deserializerClass) => propsConsumerAgentMessage.put("key.deserializer", deserializerClass)
-            case None => propsConsumerAgentMessage.put("key.serializer", "my avro") //use avro
+            case Some(deserializerClass) => propsConsumerAgentMessage.put("value.deserializer", deserializerClass)
+            case None => propsConsumerAgentMessage.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer") //use avro
         }
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
 
@@ -103,6 +103,9 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
 
     protected val stringConsumer = new KafkaConsumer[String, String](propsForConsumer("stringConsumerProperties"))
     protected val agentMessageConsumer = new KafkaConsumer[String, AgentMessage[T]](propsForConsumer("agentMessageConsumerProperties")) 
+
+    this.agentMessageConsumer.subscribe(util.Collections.singletonList(TOPIC))
+    this.stringConsumer.subscribe(util.Collections.singletonList(TOPIC))
 
     override def join(agentId: AgentId) = {
         this.agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))

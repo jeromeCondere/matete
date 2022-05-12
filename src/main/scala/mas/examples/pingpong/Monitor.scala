@@ -1,5 +1,4 @@
-package mas.examples
-
+package mas.examples.pingpong
 import com.matete.mas.agent.Agent
 import com.matete.mas.agent.AgentId
 import java.util.Properties
@@ -7,33 +6,14 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
-object PingPong extends App{
 
-    val ping = new Ping
-    val pong = new Pong
+object  MonitorApp extends App{
     val monitor = new Monitor
-
-    ping.run({})
-    pong.run({})
     monitor.run
-
-    println("I'm here")
-    ping.send(AgentId("Pong"), "Ping")
   
 }
 
-
-class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() 
-class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() {
-    override def receiveSimpleMessages(agentMessages: List[String]) = {
-        agentMessages.foreach(t => send(AgentId("Ping"), "Pong"))
-    }
-}
-
-class Monitor {
-
- val TOPIC="test"
- 
+class Monitor { 
 
 
  def run = {
@@ -59,5 +39,4 @@ class Monitor {
         consumerString.close()
     }
  }
-
 }

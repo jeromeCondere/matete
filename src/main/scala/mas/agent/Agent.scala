@@ -47,11 +47,12 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
                     
                     recordsAgentMessage.filterNot(c => c.key().endsWith(this.stringKeySuffix))
 
-                    val recordsAgentMessageList = stringConsumer.poll(this.pollRate).iterator.asScala.toList.map{
+                    val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList.map{
                         record => record.value
                     }
+                    receive(recordsAgentMessageList)
                     stringConsumer.commitAsync
-                    stringConsumer.commitAsync
+                    agentMessageConsumer.commitAsync
 
 
                     
