@@ -17,6 +17,10 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
     //polling rate
     var pollRate: Duration = Duration.ofMillis(1000)
 
+    class ReceiveMessagesTask extends Runnable {
+        override def run(): Unit = pollingLoop
+    }
+
       /***
        * I 
        ***/
@@ -29,11 +33,10 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
 
     override def receiveSimpleMessages(agentMessages: List[String]) = {}
 
-    override def forcedie(): Unit = {}
+    override def forcedie: Unit = {}
     override def init: Unit = {}
-    def run(initFunc: Unit): Unit = {
+    override def pollingLoop: Unit = {
         try{
-            init
                 while(wantToDie == false){
 
 
@@ -42,9 +45,6 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
                         record => record.value
                     }
                     receiveSimpleMessages(recordsStringList)
-
-
-
 
                     val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList
                     .filter(_.key()!=null)
@@ -65,9 +65,18 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
                 die
             }
     }
+    override def run = {
+        init
+        val receiveMessagesTask = new ReceiveMessagesTask()
+        receiveMessagesTask.run()
+        print("hey")
+
+
+    }
     def sendPool(message: String): Unit = ???
-    def suicide() = { this.wantToDie = true}
+    def suicide = { this.wantToDie = true}
 }
+
 object Agent {
     def apply[T](agentId: AgentId, brokers: List[String])
     (initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  

@@ -15,7 +15,7 @@ trait AgentLike[T] {
      * send message to another agent
      * 
      ***/
-    def init: Unit
+    def init: Unit = {}
     def send(agentIdReceiver: AgentId, message: T)
     def send(agentId: AgentId, agentMessage: String)
     def sendPool(message: String)
@@ -29,7 +29,8 @@ trait AgentLike[T] {
     def join(agentId: AgentId)
     def join(agentIds: List[AgentId])
     def disconnect(agentId: AgentId)
-    def run(initFunc: Unit)
+    def run
+    def pollingLoop
     def getTopic(agentId: AgentId): String = agentId.id+"-topic"
     def getTopicGroupBase(agentId: AgentId): String = getTopic(agentId)+"-group"
     

@@ -15,7 +15,7 @@ object PingApp extends App {
     ping.send(AgentId("Pong"), "Ping")
 
 
-    ping.run({})
+    ping.run
   
 }
 
@@ -32,5 +32,5 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
             
         Thread.sleep(2000)
     }
-    override def run = super.run({})
+    override def run = super.run
 }

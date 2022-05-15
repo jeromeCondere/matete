@@ -14,7 +14,7 @@ object PongApp extends App {
     val pong = new Pong
 
 
-    pong.run({})
+    pong.run
   
 }
 
@@ -28,5 +28,5 @@ class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() with Runna
         }
             
     }
-    override def run = super.run({})
+    override def run = super.run
 }
