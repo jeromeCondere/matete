@@ -19,8 +19,14 @@ object PongApp extends App {
 }
 
 
-class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() {
+class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() with Runnable{
     override def receiveSimpleMessages(agentMessages: List[String]) = {
-        agentMessages.foreach(t => send(AgentId("Ping"), "Pong"))
+        val e = agentMessages.filter(_ == "Ping")
+        if(e.size>0){
+            send(AgentId("Ping"), "Pong")
+            println(s"Ping received : ${e.size}")
+        }
+            
     }
+    override def run = super.run({})
 }

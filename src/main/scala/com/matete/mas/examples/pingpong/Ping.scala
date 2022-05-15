@@ -8,7 +8,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
-
+import java.time.Duration
 object PingApp extends App {
 
     val ping = new Ping
@@ -20,10 +20,17 @@ object PingApp extends App {
 }
 
 
-class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() {
-    pollRate = 1000
+class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runnable {
+    //pollRate = Duration.ofMillis(100)
     
     override def receiveSimpleMessages(agentMessages: List[String]) = {
-        agentMessages.foreach(t => send(AgentId("Pong"), "Ping"))
+        val e = agentMessages.filter(_ == "Pong") 
+        if(e.size>0){
+            send(AgentId("Pong"), "Ping")
+            println(s"Pong received size ${e.size}")
+        }
+            
+        Thread.sleep(2000)
     }
+    override def run = super.run({})
 }

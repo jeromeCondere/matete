@@ -79,6 +79,7 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         propsConsumerString.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         propsConsumerString.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         propsConsumerString.put("group.id", getTopicGroupBase(agentId)+"-classic")
+        propsConsumerString.put("enable.auto.commit", "false")
 
 
         val  propsConsumerAgentMessage = new Properties()
@@ -90,6 +91,8 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
             case None => propsConsumerAgentMessage.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer") //use avro
         }
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
+        propsConsumerAgentMessage.put("enable.auto.commit", "false")
+
 
         Map("stringConsumerProperties" -> propsConsumerString, "agentMessageConsumerProperties" -> propsConsumerAgentMessage)
     }  
@@ -118,14 +121,14 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
 
     override  def send(agentIdReceiver: AgentId, message: T) = {
         // get topic from receiver and then  send it
-        val record = new ProducerRecord(getTopic(agentIdReceiver), agentIdReceiver.id, AgentMessage(this.agentId, message))
+        val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", AgentMessage(this.agentId, message))
         this.agentMessageProducer.send(record)
     }
 
 
    
-    override  def send(agentId: AgentId, agentMessage: String) = {
-        val record = new ProducerRecord(getTopic(agentId)+this.stringKeySuffix, agentId.id, agentMessage)
+    override  def send(agentIdReceiver: AgentId, agentMessage: String) = {
+        val record = new ProducerRecord(getTopic(agentIdReceiver), s"from_${this.agentId.id}_to_${agentIdReceiver.id}${this.stringKeySuffix}", agentMessage)
         this.stringProducer.send(record)
     }
 

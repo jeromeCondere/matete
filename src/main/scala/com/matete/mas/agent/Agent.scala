@@ -5,6 +5,8 @@ import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
 import scala.collection.JavaConverters._
+import java.time.Duration
+import org.apache.kafka.common.errors.WakeupException
 
 
 class Agent[T](agentId: AgentId, brokers: List[String])
@@ -13,7 +15,7 @@ class Agent[T](agentId: AgentId, brokers: List[String])
 (implicit serializer: Option[String] = None, deserializer: Option[String] = None) 
 extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersProperties)(serializer, deserializer){
     //polling rate
-    var pollRate: Long = 100
+    var pollRate: Duration = Duration.ofMillis(1000)
 
       /***
        * I 
@@ -33,30 +35,32 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
         try{
             init
                 while(wantToDie == false){
-                    val recordsString = stringConsumer.poll(this.pollRate).asScala
-                        .filter(c => c.key().endsWith(this.stringKeySuffix))
 
-                    val recordsStringList = stringConsumer.poll(this.pollRate).iterator.asScala.toList.map{
+
+                    val recordsStringList = stringConsumer.poll(this.pollRate).iterator.asScala.toList
+                    .filter(c => c.key()!= null && c.key().endsWith(this.stringKeySuffix)).map{
                         record => record.value
                     }
-
                     receiveSimpleMessages(recordsStringList)
-                    
-                    val recordsAgentMessage = agentMessageConsumer.poll(this.pollRate).asScala
-                        .filterNot(c => c.key().endsWith(this.stringKeySuffix))
-                    
-                    recordsAgentMessage.filterNot(c => c.key().endsWith(this.stringKeySuffix))
 
-                    val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList.map{
-                        record => record.value
+
+
+
+                    val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList
+                    .filter(_.key()!=null)
+                    .filterNot(_.key().endsWith(this.stringKeySuffix)).map{
+                        record =>  println(record.value())
+                            record.value
                     }
                     receive(recordsAgentMessageList)
+
                     stringConsumer.commitAsync
                     agentMessageConsumer.commitAsync
-
-
                     
-                }
+                } 
+            } catch {
+                case    e: WakeupException => println()
+                
             } finally {
                 die
             }
