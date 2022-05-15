@@ -13,17 +13,20 @@ import scala.collection.JavaConverters._
 
 object PingPong extends App{
 
+    print("hevbyhvu 1")
     val ping = new Ping
     val pong = new Pong
+    ping.send(AgentId("Pong"), "Ping")
+
+    print("hevbyhvu 1")
+    new Thread(ping).start()
+    new Thread(pong).start()
+    print("hevbyhvu")
 
     val monitor = new Monitor
-
-    ping.run
-    pong.run
     monitor.run
 
-    println("I'm here")
-    ping.send(AgentId("Pong"), "Ping")
+
   
 }
 
@@ -32,6 +35,7 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
     
     override def receiveSimpleMessages(agentMessages: List[String]) = {
         val e = agentMessages.filter(_ == "Pong") 
+        println("hey-hey")
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
             println(s"Pong received size ${e.size}")

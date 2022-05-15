@@ -17,10 +17,6 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
     //polling rate
     var pollRate: Duration = Duration.ofMillis(1000)
 
-    class ReceiveMessagesTask extends Runnable {
-        override def run(): Unit = pollingLoop
-    }
-
       /***
        * I 
        ***/
@@ -67,10 +63,8 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
     }
     override def run = {
         init
-        val receiveMessagesTask = new ReceiveMessagesTask()
-        receiveMessagesTask.run()
-        print("hey")
-
+        print("exe")
+        pollingLoop
 
     }
     def sendPool(message: String): Unit = ???

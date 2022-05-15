@@ -18,7 +18,7 @@ class Monitor {
 
 
  def run = {
-
+     ojoj,o
     val  props = new Properties()
     props.put("bootstrap.servers", "localhost:9092")
     
@@ -36,7 +36,7 @@ class Monitor {
             records.forEach{ record =>
                 println(s"topic = ${record.topic()}, partition = ${record.partition()}, offset = ${record.offset()}, key = ${record.key()}, value = ${record.value()}\n")
             }
-            consumerString.commitAsync      
+            consumerString.commitAsync
         }
     } finally {
         consumerString.close()

@@ -1,19 +1,41 @@
 import Dependencies._
+import  Constants._
+import Examples._
 
-ThisBuild / scalaVersion     := "2.13.8"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
-ThisBuild / organization     := "com.matete.mas"
-ThisBuild / organizationName := "matete"
 
-lazy val root = (project in file("."))
+ThisBuild / scalaVersion := projectScalaVersion
+
+lazy val commonSettings = Seq(
+  organization := "com.matete",
+  version := projectVersion,
+  scalaVersion := projectScalaVersion,
+  organizationName := "matete",
+  libraryDependencies += scalaTest % Test,
+  libraryDependencies += "org.apache.kafka" % "kafka-streams" % kafkaVersion,
+  libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion,
+  libraryDependencies += "org.apache.kafka" % "kafka-clients" % kafkaVersion,
+  libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
+  resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/")
+
+)
+
+lazy val core = (project in file(".")).settings(
+  commonSettings
+).aggregate(matete, examples)
+
+lazy val matete = (project in file("matete"))
   .settings(
-    name := "matete",
-    libraryDependencies += scalaTest % Test,
-    libraryDependencies += "org.apache.kafka" % "kafka-streams" % "3.1.0",
-    libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % "3.1.0",
-    libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.1.0",
-    libraryDependencies += "io.confluent" % "kafka-avro-serializer" % "7.1.1",
-    resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/")
+    commonSettings,
+    name := "matete-mas",
+
   )
 
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
+lazy val examples = (project in file("examples"))
+  .settings(
+    commonSettings,
+      name := "matete-examples"
+  )
+  .aggregate(pingpong)
+  
+
+  lazy val pingpong = (project in file("examples/pingpong")).dependsOn(matete)
