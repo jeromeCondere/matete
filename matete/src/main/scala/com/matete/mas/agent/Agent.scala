@@ -7,6 +7,7 @@ import  java.util
 import scala.collection.JavaConverters._
 import java.time.Duration
 import org.apache.kafka.common.errors.WakeupException
+import com.typesafe.scalalogging.Logger
 
 
 class Agent[T](agentId: AgentId, brokers: List[String])
@@ -16,6 +17,7 @@ class Agent[T](agentId: AgentId, brokers: List[String])
 extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersProperties)(serializer, deserializer){
     //polling rate
     var pollRate: Duration = Duration.ofMillis(1000)
+    val logger = Logger(getClass.getName)
 
       /***
        * I 

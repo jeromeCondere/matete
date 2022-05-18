@@ -9,14 +9,21 @@ import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
 import java.time.Duration
+import com.typesafe.scalalogging.Logger
+
 object PingApp extends App {
 
+    val logger = Logger(PingApp.getClass())
+    logger.error("doe")
     val ping = new Ping
     ping.send(AgentId("Pong"), "Ping")
+    println("sending ping")
 
 
     ping.run
-  
+
+    
+  println("end of ping")
 }
 
 

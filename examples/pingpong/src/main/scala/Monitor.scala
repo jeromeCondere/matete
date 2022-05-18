@@ -18,7 +18,6 @@ class Monitor {
 
 
  def run = {
-     ojoj,o
     val  props = new Properties()
     props.put("bootstrap.servers", "localhost:9092")
     

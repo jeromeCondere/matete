@@ -15,6 +15,9 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion,
   libraryDependencies += "org.apache.kafka" % "kafka-clients" % kafkaVersion,
   libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
+  libraryDependencies += "ch.qos.logback" % "logback-classic" % logback,
+  libraryDependencies += "ch.qos.logback" % "logback-core" % logback,
+  libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % scalaLogging,
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/")
 
 )

@@ -19,8 +19,11 @@ object PingPong extends App{
     ping.send(AgentId("Pong"), "Ping")
 
     print("hevbyhvu 1")
-    new Thread(ping).start()
-    new Thread(pong).start()
+    val pingThread = new Thread(ping)
+    val pongThread = new Thread(pong)
+
+    pingThread.start()
+    pongThread.start()
     print("hevbyhvu")
 
     val monitor = new Monitor
@@ -35,10 +38,10 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
     
     override def receiveSimpleMessages(agentMessages: List[String]) = {
         val e = agentMessages.filter(_ == "Pong") 
-        println("hey-hey")
+        
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
-            println(s"Pong received size ${e.size}")
+            println(s"Pong received size ${e.size}, sending Ping")
         }
             
         Thread.sleep(2000)
@@ -51,7 +54,7 @@ class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() with Runna
         val e = agentMessages.filter(_ == "Ping")
         if(e.size>0){
             send(AgentId("Ping"), "Pong")
-            println(s"Ping received : ${e.size}")
+            println(s"Ping received : ${e.size}, sending Pong")
         }
             
     }
