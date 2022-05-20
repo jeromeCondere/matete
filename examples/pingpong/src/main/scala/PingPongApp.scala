@@ -11,20 +11,18 @@ import  java.util
 import scala.collection.JavaConverters._
 
 
-object PingPong extends App{
+object PingPongApp extends App{
 
-    print("hevbyhvu 1")
     val ping = new Ping
     val pong = new Pong
     ping.send(AgentId("Pong"), "Ping")
 
-    print("hevbyhvu 1")
     val pingThread = new Thread(ping)
     val pongThread = new Thread(pong)
 
     pingThread.start()
     pongThread.start()
-    print("hevbyhvu")
+    println("end thread start")
 
     val monitor = new Monitor
     monitor.run
@@ -41,7 +39,7 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
         
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
-            println(s"Pong received size ${e.size}, sending Ping")
+            logger.info(s"Pong received size ${e.size}, sending Ping")
         }
             
         Thread.sleep(2000)
@@ -54,7 +52,7 @@ class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() with Runna
         val e = agentMessages.filter(_ == "Ping")
         if(e.size>0){
             send(AgentId("Ping"), "Pong")
-            println(s"Ping received : ${e.size}, sending Pong")
+            logger.error(s"Ping received : ${e.size}, sending Pong")
         }
             
     }

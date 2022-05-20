@@ -13,8 +13,8 @@ import com.typesafe.scalalogging.Logger
 
 object PingApp extends App {
 
-    val logger = Logger(PingApp.getClass())
-    logger.error("doe")
+    val logger = Logger("PingApp")
+    logger.debug("doe")
     val ping = new Ping
     ping.send(AgentId("Pong"), "Ping")
     println("sending ping")
@@ -28,13 +28,12 @@ object PingApp extends App {
 
 
 class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runnable {
-    //pollRate = Duration.ofMillis(100)
     
     override def receiveSimpleMessages(agentMessages: List[String]) = {
         val e = agentMessages.filter(_ == "Pong") 
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
-            println(s"Pong received size ${e.size}")
+            logger.info(s"Pong received size ${e.size}")
         }
             
         Thread.sleep(2000)
