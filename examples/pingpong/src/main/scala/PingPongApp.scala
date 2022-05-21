@@ -1,4 +1,4 @@
-package mas.examples
+package com.matete.examples
 
 import com.matete.mas.agent.Agent
 import com.matete.mas.agent.AgentId

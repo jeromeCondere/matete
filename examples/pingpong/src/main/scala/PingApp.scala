@@ -1,5 +1,4 @@
-package mas.examples.pingpong
-package mas.examples
+package com.matete.examples.pingpong
 
 import com.matete.mas.agent.Agent
 import com.matete.mas.agent.AgentId
@@ -14,16 +13,15 @@ import com.typesafe.scalalogging.Logger
 object PingApp extends App {
 
     val logger = Logger("PingApp")
-    logger.debug("doe")
     val ping = new Ping
     ping.send(AgentId("Pong"), "Ping")
-    println("sending ping")
+    logger.info("sending first ping")
 
 
     ping.run
 
     
-  println("end of ping")
+  logger.info("end of ping")
 }
 
 
@@ -33,10 +31,9 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
         val e = agentMessages.filter(_ == "Pong") 
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
-            logger.info(s"Pong received size ${e.size}")
+            logger.info(s"Pong received size ${e.size}, sending Ping")
         }
             
         Thread.sleep(2000)
     }
-    override def run = super.run
 }
