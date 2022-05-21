@@ -1,9 +1,11 @@
 import Dependencies._
 import  Constants._
-import Examples._
-
+import Examples._ 
+import SbtProjectImplicits._
 
 ThisBuild / scalaVersion := projectScalaVersion
+
+
 
 lazy val commonSettings = Seq(
   organization := "com.matete",
@@ -46,3 +48,5 @@ lazy val examples = (project in file("examples"))
   
 
   lazy val pingpong = (project in file("examples/pingpong")).dependsOn(matete)
+  // .addExampleConfig(pongClass, PongConfig)
+  // .addExampleConfig(pingClass, PingConfig)
