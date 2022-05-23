@@ -4,7 +4,7 @@ import Examples._
 import SbtProjectImplicits._
 
 ThisBuild / scalaVersion := projectScalaVersion
-
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 
 lazy val commonSettings = Seq(
@@ -47,6 +47,7 @@ lazy val examples = (project in file("examples"))
   .aggregate(pingpong)
   
 
-  lazy val pingpong = (project in file("examples/pingpong")).dependsOn(matete)
-  // .addExampleConfig(pongClass, PongConfig)
-  // .addExampleConfig(pingClass, PingConfig)
+  lazy val pingpong = (project in file("examples/pingpong"))
+   .addExampleConfig(pongClass, PongConfig)
+   .addExampleConfig(pingClass, PingConfig)
+   .dependsOn(matete)

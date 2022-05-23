@@ -20,7 +20,6 @@ object PingApp extends App {
 
     ping.run
 
-    
   logger.info("end of ping")
 }
 

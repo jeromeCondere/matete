@@ -1,13 +1,13 @@
 import  sbt._
 
 object Examples {
-  lazy val pingpongClass = "com.matete.examples.PingPongApp"
-  lazy val pongClass = "com.matete.examples.PongApp"
-  lazy val pingClass = "com.matete.examples.PingApp"
+  lazy val pingpongClass = "com.matete.examples.pingpong.PingPongApp"
+  lazy val pongClass = "com.matete.examples.pingpong.PongApp"
+  lazy val pingClass = "com.matete.examples.pingpong.PingApp"
 
 
-  lazy val PongConfig = config("pong").describedAs("pong config") extend(Compile, Runtime, Test)
-  lazy val PingConfig = config("ping").describedAs("Dependencies required in all configurations.") extend(Compile, Runtime, Test)
+  lazy val PongConfig = config("Pong").describedAs("pong config") extend(Compile, Runtime, Test)
+  lazy val PingConfig = config("Ping").describedAs("ping config") extend(Compile, Runtime, Test)
 
   
 
