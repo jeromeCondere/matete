@@ -2,15 +2,34 @@ import Dependencies._
 import  Constants._
 import Examples._ 
 import SbtProjectImplicits._
+import java.util.Properties
 
-ThisBuild / scalaVersion := projectScalaVersion
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+lazy val appProperties = settingKey[Properties]("The application properties")
+
+
+ThisBuild / scalaVersion := appProperties.value.getProperty("scalaVersion")
+
 
 
 lazy val commonSettings = Seq(
   organization := "com.matete",
-  version := projectVersion,
-  scalaVersion := projectScalaVersion,
+  appProperties := {
+      val prop = new Properties()
+      try {
+          
+      val file = new File("project/build.properties")
+      IO.load(prop, file)
+      
+      } catch {
+        case e:Exception => println(e)
+      }
+
+      prop
+    },
+  version := appProperties.value.getProperty("version"),
+  scalaVersion := appProperties.value.getProperty("scalaVersion"),
   organizationName := "matete",
   libraryDependencies += scalaTest % Test,
   libraryDependencies += "org.apache.kafka" % "kafka-streams" % kafkaVersion,
