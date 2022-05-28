@@ -15,18 +15,21 @@ RUN unzip sbt-$SBT_VERSION.zip -d ops
 RUN curl -fL https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz | gzip -d > cs && chmod +x cs
 RUN yes | ./cs setup
 RUN ./cs install scala:$SCALA_VERSION && ./cs install scalac:$SCALA_VERSION
-RUN echo "alias scala='./cs launch scala:$SCALA_VERSION'" >>/root/.bashrc
+RUN echo "alias scala='/./cs launch scala:$SCALA_VERSION'" >>/root/.bashrc
 RUN echo "alias sbt='/ops/sbt/bin/sbt'" >>/root/.bashrc
 
 
 RUN git clone https://github.com/jeromeCondere/matete.git
 
 WORKDIR matete
-# RUN sbt 
-# RUN  pingpong / Pong /  assembly
-# RUN scala  examples/pingpong/
+# RUN scala
+SHELL   ["/bin/bash" , "/ops/sbt/bin/sbt" ]
 
+RUN pingpong / Pong /  assembly
+RUN  exit
+WORKDIR examples/pingpong/target/scala-2.13
+
+ENTRYPOINT [ "/bin/bash" ]
 
 EXPOSE 9092
 
-ENTRYPOINT [ "/bin/bash" ]
