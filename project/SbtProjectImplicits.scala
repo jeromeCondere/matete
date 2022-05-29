@@ -20,9 +20,8 @@ object SbtProjectImplicits {
                 Compile / scalaSource := scalaSource.value,
                 Compile / mainClass := Some(classname),
 
-                 mainClass := Some(classname),
+                mainClass := Some(classname),
                 Compile / run / mainClass := Some(classname),
-                //run / sources ~= (_.filter(_.name == classname.split('.').last + ".scala")),
                 assembly  := (Config / assembly).value,
                 assembly / mainClass := Some(classname),
                 assembly / assemblyJarName:= classname.split('.').last + s"-${version.value}_${scalaVersion.value}.jar",
@@ -30,7 +29,6 @@ object SbtProjectImplicits {
                     case PathList("META-INF", xs @ _*) => MergeStrategy.discard
                     case x if x.endsWith("module-info.class") => MergeStrategy.discard
                     case x => MergeStrategy.first
-                    
                 }
             ))  : _*)
             
