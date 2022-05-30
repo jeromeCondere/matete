@@ -26,9 +26,9 @@ object SbtProjectImplicits {
                 assembly / mainClass := Some(classname),
                 assembly / assemblyJarName:= classname.split('.').last + s"-${version.value}_${scalaVersion.value}.jar",
                 assembly / assemblyMergeStrategy := {
-                    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-                    case x if x.endsWith("module-info.class") => MergeStrategy.discard
-                    case x => MergeStrategy.first
+                    case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+                    //case x if x.endsWith("module-info.class") => MergeStrategy.discard
+                    case _ => MergeStrategy.first
                 }
             ))  : _*)
             

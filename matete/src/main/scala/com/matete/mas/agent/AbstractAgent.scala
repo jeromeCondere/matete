@@ -7,7 +7,7 @@ import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
 import scala.collection.JavaConverters._
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.LogManager
 
 case class AgentId(id: String)
 
@@ -46,7 +46,7 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
     val TOPIC: String = getTopic(agentId)
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
-    final val logger = Logger(s"Agent - ${agentId.id}")
+    final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
      //TODO: add list of agent ids that are connected to the agent
 
     def initDefaultProducersProperties: Map[String, Properties] = {

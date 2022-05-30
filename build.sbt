@@ -10,7 +10,7 @@ lazy val appProperties = settingKey[Properties]("The application properties")
 
 
 ThisBuild / scalaVersion := appProperties.value.getProperty("scalaVersion")
-
+//val setLog4jDebug = sys.props("log4j2.debug") = "true"
 
 
 lazy val commonSettings = Seq(
@@ -36,13 +36,14 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion,
   libraryDependencies += "org.apache.kafka" % "kafka-clients" % kafkaVersion,
   libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
-  libraryDependencies += "ch.qos.logback" % "logback-classic" % logback,
+  //libraryDependencies += "ch.qos.logback" % "logback-classic" % logback,
 
-  libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % log4j ,
-  libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % "12.0" ,
-  libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % log4j,
-  libraryDependencies += "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4j,
-  libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % scalaLogging,
+  libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % log4jApiScala,
+  libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % log4j2 ,
+  libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % log4j2 % Runtime,
+  libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % jackson % Runtime,
+  libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % jackson % Runtime,
+  libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % jackson % Runtime,
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/")
 
 )
@@ -67,6 +68,7 @@ lazy val examples = (project in file("examples"))
   
 
   lazy val pingpong = (project in file("examples/pingpong"))
+   .settings(commonSettings)
    .addExampleConfig(pongClass, PongConfig)
    .addExampleConfig(pingClass, PingConfig)
    .dependsOn(matete)

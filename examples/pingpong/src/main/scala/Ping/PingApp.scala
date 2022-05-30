@@ -8,11 +8,11 @@ import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
 import java.time.Duration
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.LogManager
 
 object PingApp extends App {
 
-    val logger = Logger("PingApp")
+    val logger = LogManager.getLogger("PingApp")
     val ping = new Ping
     ping.send(AgentId("Pong"), "Ping")
     logger.info("sending first ping")
