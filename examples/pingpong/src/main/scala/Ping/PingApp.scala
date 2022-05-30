@@ -13,9 +13,9 @@ import org.apache.logging.log4j.LogManager
 object PingApp extends App {
 
     val logger = LogManager.getLogger("PingApp")
+    logger.info("sending first ping")
     val ping = new Ping
     ping.send(AgentId("Pong"), "Ping")
-    logger.info("sending first ping")
 
 
     ping.run
