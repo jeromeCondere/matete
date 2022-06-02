@@ -4,17 +4,25 @@ import Examples._
 import SbtProjectImplicits._
 import java.util.Properties
 
-Global / onChangedBuildSource := ReloadOnSourceChanges
+
 
 lazy val appProperties = settingKey[Properties]("The application properties")
 
 
 ThisBuild / scalaVersion := appProperties.value.getProperty("scalaVersion")
-//val setLog4jDebug = sys.props("log4j2.debug") = "true"
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+
+
+
 
 
 lazy val commonSettings = Seq(
-  organization := "com.matete",
+  // organization := "com.matete",
+  organization := "io.github.jeromecondere",
+  // organizationName := "matete",
+  organizationName := "jeromeconderes",
   appProperties := {
       val prop = new Properties()
       try {
@@ -30,7 +38,16 @@ lazy val commonSettings = Seq(
     },
   version := appProperties.value.getProperty("version"),
   scalaVersion := appProperties.value.getProperty("scalaVersion"),
-  organizationName := "matete",
+  
+
+  developers := List(
+    Developer(
+      id    = "jeromecondere",
+      name  = "Jerome Condere",
+      email = "jerome.condere@gmail.com",
+      url = url("https://www.google.com/")
+    )
+  ),
   libraryDependencies += scalaTest % Test,
   libraryDependencies += "org.apache.kafka" % "kafka-streams" % kafkaVersion,
   libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion,
@@ -44,7 +61,15 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % jackson % Runtime,
-  resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/")
+  resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/"),
+  publishTo := {
+    val nexus = "https://s01.oss.sonatype.org/"
+    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  },
+  publishMavenStyle := true,
+  versionScheme := Some("early-semver"),
+  pomIncludeRepository := { _ => false }
 
 )
 
