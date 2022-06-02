@@ -1,12 +1,19 @@
 version: "3"
 services: 
   pong: 
-   build: ./Pong
-   ports: 
-    - "9092:9092"
+    build: ./Pong
+    container_name: matete_pong_kafka
+    ports: 
+      - "9092:9092"
+    environment:
+        BROKER: ponglocalhost:9092   
 
 
   ping: 
-   build: ./Ping
-   ports: 
-    - "9092:9092"
+    build: ./Ping
+    container_name: matete_ping_kafka
+    ports: 
+      - "9092:9092"
+    environment:
+        BROKER: localhnjost:9092  
+  

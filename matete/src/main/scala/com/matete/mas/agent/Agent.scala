@@ -22,6 +22,7 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
        * I 
        ***/
     logger.info("agent started")
+    logger.debug(s"Brokers - ${brokers.mkString(", ")}")
     
     override def disconnect(agentId: AgentId): Unit = {}
 

@@ -1,12 +1,12 @@
 FROM openjdk:11
 
-ENV SBT_VERSION=1.6.2
-ENV SCALA_VERSION=2.13.8
-ENV PROJECT_VERSION=0.1.0-SNAPSHOT
+ARG SBT_VERSION=1.6.2
+ARG SCALA_VERSION=2.13.8
+ARG PROJECT_VERSION=0.1.0-SNAPSHOT
+ENV BROKER=localhost:9092
 
-RUN echo $SBT_VERSION
-
-
+ENV SCALA_VERSION=${SCALA_VERSION}
+ENV PROJECT_VERSION=${PROJECT_VERSION}
 
 # Install sbt
 RUN curl -L -o sbt-$SBT_VERSION.zip https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.zip
@@ -30,7 +30,7 @@ WORKDIR examples/pingpong/target/scala-2.13
 
 SHELL   ["/bin/bash", "-c" ]
 
-ENTRYPOINT  /./cs launch scala:$SCALA_VERSION  -- PingApp-${PROJECT_VERSION}_${SCALA_VERSION}.jar
+ENTRYPOINT  /./cs launch scala:$SCALA_VERSION  -- PingApp-${PROJECT_VERSION}_${SCALA_VERSION}.jar ${BROKER}
 
 
 EXPOSE 9092
