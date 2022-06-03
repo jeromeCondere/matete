@@ -16,7 +16,7 @@ object PingApp extends App {
     val logger = LogManager.getLogger("PingApp")
     logger.info("sending first ping")
     val broker = if(args.size > 1) args(1) else args(0)
-    println(s"broker - $broker")
+    logger.info(s"broker - $broker")
 
     val ping = new Ping(List(broker))
     ping.send(AgentId("Pong"), "Ping")

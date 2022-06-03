@@ -1,4 +1,4 @@
-package mas.examples.pingpong
+package com.matete.examples.pingpong
 import com.matete.mas.agent.Agent
 import com.matete.mas.agent.AgentId
 import java.util.Properties
@@ -11,7 +11,6 @@ import scala.collection.JavaConverters._
 object  MonitorApp extends App{
     val monitor = new Monitor
     monitor.run
-  
 }
 
 class Monitor { 

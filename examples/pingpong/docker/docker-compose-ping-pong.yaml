@@ -4,7 +4,7 @@ services:
     build: ./Pong
     container_name: matete_pong_kafka
     environment:
-        BROKER: host.docker.internal:9092   
+        BROKER: "host.docker.internal:9092"  
     extra_hosts:
       - "host.docker.internal:host-gateway"    
 
@@ -12,6 +12,6 @@ services:
     build: ./Ping
     container_name: matete_ping_kafka
     environment:
-        BROKER: host.docker.internal:9092  
+        BROKER: "host.docker.internal:9092"  
     extra_hosts:
       - "host.docker.internal:host-gateway"  
