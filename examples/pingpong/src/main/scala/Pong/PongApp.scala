@@ -13,7 +13,7 @@ import org.apache.logging.log4j.LogManager
 
 object PongApp extends App {
 
-    val logger = LogManager.getLogger("PingApp")
+    val logger = LogManager.getLogger("PongApp")
     logger.info("sending first ping")
     logger.info("end of ping")
     val broker = if(args.size > 1) args(1) else args(0)
