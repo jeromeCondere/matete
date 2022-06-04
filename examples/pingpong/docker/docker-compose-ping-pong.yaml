@@ -7,7 +7,8 @@ services:
         BROKER: "host.docker.internal:9092"  
     extra_hosts:
       - "host.docker.internal:host-gateway"    
-
+    # networks:
+    #   - default-net
   ping: 
     build: ./Ping
     container_name: matete_ping_kafka
@@ -15,3 +16,8 @@ services:
         BROKER: "host.docker.internal:9092"  
     extra_hosts:
       - "host.docker.internal:host-gateway"  
+    # networks:
+    #   - default-net
+# networks:
+#   default-net:
+#     driver: bridge

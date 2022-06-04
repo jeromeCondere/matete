@@ -18,6 +18,7 @@ object PongApp extends App {
     logger.info("end of ping")
     val broker = if(args.size > 1) args(1) else args(0)
     logger.info("broker: "+broker)
+    logger.info("start running pong agent")
 
     val pong = new Pong(List(broker))
     pong.run

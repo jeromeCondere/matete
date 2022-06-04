@@ -20,9 +20,7 @@ object PingApp extends App {
 
     val ping = new Ping(List(broker))
     ping.send(AgentId("Pong"), "Ping")
-    
-
-
+ 
     ping.run
 
   logger.info("end of ping")
