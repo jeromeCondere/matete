@@ -9,18 +9,43 @@ import org.apache.kafka.clients.consumer._
 import  java.util
 import java.time.Duration
 import org.apache.logging.log4j.LogManager
-
+import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
+import scala.collection.JavaConverters._
 object PingApp extends App {
+    val topicName = "Ping-topic"
+    val newTopics = List(
+     new NewTopic(topicName, 1, 1.toShort) 
+    )
 
 
     val logger = LogManager.getLogger("PingApp")
     logger.info("sending first ping")
+    logger.info("ayo")
     val broker = if(args.size > 1) args(1) else args(0)
+    val props = new Properties();
+    props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
+    val client = AdminClient.create(props)
+    val topicsList = client.listTopics().names().get().asScala.filter(_ == topicName )
+
+    if(topicsList.isEmpty) { // topic doesn't exist
+        client.createTopics(newTopics.asJava).values().asScala.map{
+            case (topicName, kafkaFuture) =>   kafkaFuture.whenComplete {
+                case (_, throwable: Throwable) if Option(throwable).isDefined => logger.error(s"topic $topicName could'nt be created")
+                case _ => logger.info(s"topic $topicName created")
+            } 
+        }
+    } else {
+        logger.info(s"topic $topicName already exists, won't be created")
+    }
+
+
     logger.info(s"broker - $broker")
 
     val ping = new Ping(List(broker))
     ping.send(AgentId("Pong"), "Ping")
- 
+     logger.info("start running pong agent")
+
     ping.run
 
   logger.info("end of ping")

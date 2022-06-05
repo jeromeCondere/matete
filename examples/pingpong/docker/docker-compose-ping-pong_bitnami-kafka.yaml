@@ -1,0 +1,57 @@
+version: "3.3"
+services: 
+  zookeeper:
+    image: 'bitnami/zookeeper'
+    container_name: zookeeper_server
+    ports:
+      - '12181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka-app-tier
+
+  kafka:
+    image: 'bitnami/kafka'
+    container_name: kafka_server
+    ports:
+      - '19092:9092'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    # user: root
+    depends_on:
+      - zookeeper
+
+    # volumes:
+    #   - ./init_kafka_server.sh:/docker-entrypoint-initdb.d/init_kafka_server.sh
+    networks:
+      - kafka-app-tier
+
+
+  # pong: 
+  #   build: ./Pong
+  #   container_name: matete_pong_kafka
+  #   environment:
+  #       BROKER: "kafka:9092"  
+
+  #   networks:
+  #     - kafka-app-tier
+  #   depends_on:
+  #     - kafka
+
+  # ping: 
+  #   build: ./Ping
+  #   container_name: matete_ping_kafka
+  #   environment:
+  #       BROKER: "kafka:9092"  
+  #   networks:
+  #     - kafka-app-tier
+  #   depends_on:
+  #     - kafka
+
+networks:
+  kafka-app-tier:
+    driver: bridge
