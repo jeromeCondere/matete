@@ -13,16 +13,18 @@ import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
 
 object PongApp extends App {
-    val topicName = "Ping-topic"
+    val topicName = "Pong-topic"
     val newTopics = List(
      new NewTopic(topicName, 1, 1.toShort) 
     )
+    
 
     val logger = LogManager.getLogger("PongApp")
-    logger.info("sending first ping")
-    logger.info("end of ping")
     val broker = if(args.size > 1) args(1) else args(0)
+
+
     logger.info("broker: "+broker)
+    
     val props = new Properties();
     props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     val client = AdminClient.create(props)

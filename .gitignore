@@ -7,3 +7,6 @@ target/
 *.bin
 *.jar
 .bsp/
+*.tgz
+*.gz
+*.zip

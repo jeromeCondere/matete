@@ -20,12 +20,17 @@ object PingApp extends App {
 
 
     val logger = LogManager.getLogger("PingApp")
-    logger.info("sending first ping")
-    logger.info("ayo")
+    logger.info("Sending first message ping")
+
     val broker = if(args.size > 1) args(1) else args(0)
-    val props = new Properties();
+    val props = new Properties()
+    
     props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
+    props.put("request.timeout.ms", 70000)
+    props.put("default.api.timeout.ms", 90000)
+
     val client = AdminClient.create(props)
+    
     val topicsList = client.listTopics().names().get().asScala.filter(_ == topicName )
 
     if(topicsList.isEmpty) { // topic doesn't exist
@@ -44,7 +49,7 @@ object PingApp extends App {
 
     val ping = new Ping(List(broker))
     ping.send(AgentId("Pong"), "Ping")
-     logger.info("start running pong agent")
+    logger.info("start running ping agent")
 
     ping.run
 
