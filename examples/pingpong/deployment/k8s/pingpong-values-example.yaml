@@ -1,0 +1,51 @@
+kafka:
+  persistence:
+    storageClass: local-storage-delete-after
+    accessModes: ["ReadWriteMany"]
+    size: 2Gi
+    nodeports:
+
+
+  global:
+    storageClass: local-storage-delete-after
+
+  containerSecurityContext:
+    runAsUser: 1003 #k8 user
+    runAsNonRoot: true
+
+  podSecurityContext:
+    fsGroup: 1000 #k8 group
+  zookeeper:
+    persistence:
+      storageClass: local-storage-delete-after
+      accessModes: ["ReadWriteMany"]
+      size: 503Mi
+    containerSecurityContext:
+      runAsUser: 1003
+    podSecurityContext: 
+      fsGroup: 1000
+
+
+# matete value
+podSecurityContext:
+   fsGroup: 0
+
+
+containerSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+
+# ping:
+#   image:
+#     pullPolicy: Always
+# pong:
+#   image:
+#     pullPolicy: Always
+
+resources: 
+  limits:
+    memory: "1Gi"
+  requests:
+    memory: "600Mi"
+
+# /root/.local/share/coursier/bin/

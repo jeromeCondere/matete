@@ -10,3 +10,4 @@ target/
 *.tgz
 *.gz
 *.zip
+*.lock
