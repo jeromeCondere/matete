@@ -61,6 +61,7 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % jackson % Runtime,
+  libraryDependencies += "io.circe" %% "circe-yaml" % "0.14.1",
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/"),
   publishTo := {
     val nexus = "https://s01.oss.sonatype.org/"
@@ -90,11 +91,18 @@ lazy val examples = (project in file("examples"))
       name := "matete-examples"
   )
   .aggregate(pingpong)
+  .aggregate(withconfig)
   
 
-  lazy val pingpong = (project in file("examples/pingpong"))
-   .settings(commonSettings)
-   .addExampleConfig(pongClass, PongConfig)
-   .addExampleConfig(pingClass, PingConfig)
-   .addExampleConfig(monitorClass, MonitorConfig)
-   .dependsOn(matete)
+lazy val pingpong = (project in file("examples/pingpong"))
+  .settings(commonSettings)
+  .addExampleConfig(pongClass, PongConfig)
+  .addExampleConfig(pingClass, PingConfig)
+  .addExampleConfig(monitorClass, MonitorConfig)
+  .dependsOn(matete)
+
+
+lazy val withconfig = (project in file("examples/withconfig"))
+  .settings(commonSettings)
+  .addExampleConfig(withConfigClass, WithConfig)
+  .dependsOn(matete)
