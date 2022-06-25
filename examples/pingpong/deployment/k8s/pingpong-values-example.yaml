@@ -25,14 +25,7 @@ kafka:
       fsGroup: 1000
 
 
-# matete value
-podSecurityContext:
-   fsGroup: 1000
 
-
-containerSecurityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
 
 # ping:
 #   image:

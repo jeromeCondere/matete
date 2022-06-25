@@ -49,12 +49,12 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext:
-   fsGroup: 2000
+   fsGroup: 1000
 
 
 containerSecurityContext:
   runAsUser: 1000
-  runAsGroup: 3000
+  runAsGroup: 1000
   
 
 service:
