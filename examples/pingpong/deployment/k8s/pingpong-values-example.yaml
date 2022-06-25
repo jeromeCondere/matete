@@ -1,39 +1,38 @@
 kafka:
   persistence:
-    storageClass: local-storage-delete-after
-    accessModes: ["ReadWriteMany"]
+    storageClass: my-local-storage-class # change to fit your need
+    accessModes: ["ReadWriteMany"] # change to fit your need
     size: 2Gi
-    nodeports:
 
 
   global:
-    storageClass: local-storage-delete-after
+    storageClass: my-local-storage-class # change to fit your need
 
   containerSecurityContext:
-    runAsUser: 1003 #k8 user
+    runAsUser: 1000 #k8 user
     runAsNonRoot: true
 
   podSecurityContext:
     fsGroup: 1000 #k8 group
   zookeeper:
     persistence:
-      storageClass: local-storage-delete-after
-      accessModes: ["ReadWriteMany"]
+      storageClass: my-local-storage-class # change to fit your need
+      accessModes: ["ReadWriteMany"] # change to fit your need
       size: 503Mi
     containerSecurityContext:
-      runAsUser: 1003
+      runAsUser: 1000
     podSecurityContext: 
       fsGroup: 1000
 
 
 # matete value
 podSecurityContext:
-   fsGroup: 0
+   fsGroup: 1000
 
 
 containerSecurityContext:
-  runAsUser: 0
-  runAsGroup: 0
+  runAsUser: 1000
+  runAsGroup: 1000
 
 # ping:
 #   image:
@@ -48,4 +47,3 @@ resources:
   requests:
     memory: "600Mi"
 
-# /root/.local/share/coursier/bin/
