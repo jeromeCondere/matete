@@ -61,7 +61,9 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % jackson % Runtime,
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % jackson % Runtime,
-  libraryDependencies += "io.circe" %% "circe-yaml" % "0.14.1",
+  libraryDependencies += "io.circe" %% "circe-yaml" % circe,
+  libraryDependencies += "io.circe" %% "circe-generic" % circe,
+
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/"),
   publishTo := {
     val nexus = "https://s01.oss.sonatype.org/"

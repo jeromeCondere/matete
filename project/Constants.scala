@@ -6,5 +6,5 @@ object  Constants {
     lazy val log4j2 = "2.11.0"
     lazy val log4jApiScala = "12.0"
     lazy val  jackson = "2.9.5"
-    lazy val circeYaml = "0.14.1"
+    lazy val circe = "0.14.1"
 }
