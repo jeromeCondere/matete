@@ -63,6 +63,7 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % jackson % Runtime,
   libraryDependencies += "io.circe" %% "circe-yaml" % circe,
   libraryDependencies += "io.circe" %% "circe-generic" % circe,
+  libraryDependencies += "io.circe" %% "circe-generic-extras" % circe,
 
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/"),
   publishTo := {

@@ -3,16 +3,11 @@ producers:
   - name: p1
     keySerializer: "org.apache.kafka.common.serialization.StringSerializer"
     valueSerializer: "blabla"
-    compressionType: "snappy1"
-  - name: p2
-    keySerializer: "org.apache.kafka.common.serialization.StringSerializer"
-    valueSerializer: "blabla"
-    compressionType: "snappy1"
+
 consumers:
-  - name: c1
-    keySerializer: "org.apache.kafka.common.serialization.StringDeserializer"
-    valueSerializer: "blabla"
-    compressionType: "snappy1"
   - name: c2
-    keySerializer: "org.apache.kafka.common.serialization.StringDeserializer"
+    keyDeserializer: "org.apache.kafka.common.serialization.StringDeserializer"
     valueDeserializer: "blabla"
+    autoCommit: "false"
+    groupId: einfr
+
