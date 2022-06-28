@@ -7,22 +7,23 @@ import  java.util
 import scala.collection.JavaConverters._
 import java.time.Duration
 import org.apache.kafka.common.errors.WakeupException
+import com.matete.mas.configuration.AgentConfig
+import com.matete.mas.configuration.DefaultConfig.defaultConfig
 
-
-class Agent[T](agentId: AgentId, brokers: List[String])
-(initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  
-    initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
-(implicit serializer: Option[String] = None, deserializer: Option[String] = None) 
-extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersProperties)(serializer, deserializer){
+class Agent[T](configuration: AgentConfig)
+( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None) 
+extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
     //polling rate
     var pollRate: Duration = Duration.ofMillis(1000)
-    
-
       /***
        * I 
        ***/
     logger.info("agent started")
     logger.debug(s"Brokers - ${brokers.mkString(", ")}")
+    
+    class PollingLoopThread extends Runnable {
+        override def run(): Unit = pollingLoop
+    } 
     
     override def disconnect(agentId: AgentId): Unit = {}
 
@@ -30,7 +31,7 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
      * receive method to process incoming agent messages
      * @param agentMessages ordered list of agent messages (from most recent to less recent)
      ***/
-    override def receive(agentMessages: List[AgentMessage[T]]) = {}
+    override def receive(agentMessages: List[AgentMessage[T]], consumerName: String = "defaultAgentMessageConsumer" ) = {}
 
     /***
      * receive method to process incoming string messages
@@ -54,17 +55,26 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
                     val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList
                     .filter(_.key!=null)
                     .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
-                        record =>  println(record.value)
-                            record.value
+                        record =>  record.value
                     }
-                    receive(recordsAgentMessageList)
+                    receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
 
+                    consumers.filterNot(tuple => List("defaultStringConsumer", "defaultAgentMessageConsumer").contains(tuple._1)).foreach {
+                        case (consumerName, consumer) => val recordsAgentMessageListNotDefault = consumer.poll(this.pollRate).iterator.asScala.toList
+                            .filter(_.key!=null)
+                            .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
+                                record => record.value
+                            }
+                            receive(recordsAgentMessageListNotDefault, consumerName)
+                            consumer.commitAsync
+
+                    }
                     stringConsumer.commitAsync
                     agentMessageConsumer.commitAsync
                     
                 } 
             } catch {
-                case    e: WakeupException => logger.info("Wakeup exception")
+                case  e: WakeupException => logger.info("Wakeup exception")
                 
             } finally {
                 die
@@ -78,13 +88,26 @@ extends AbstractAgent[T](agentId, brokers)(initProducerProperties,initConsumersP
 
     }
     def suicide = { this.wantToDie = true}
+
+    def this(agentId: AgentId, brokers: List[String])
+        ( serializer: Option[String], deserializer: Option[String]) = {
+
+            this( 
+                defaultConfig(brokers = brokers, agentId = agentId)
+            )(serializer, deserializer)
+ }
 }
 
 object Agent {
     def apply[T](agentId: AgentId, brokers: List[String])
-    (initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  
-    initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
-        (implicit serializer: Option[String] = None, deserializer: Option[String] = None): Agent[T] = {
-        new  Agent[T](agentId, brokers)(initProducerProperties, initConsumersProperties)(serializer, deserializer)
+        ( serializer: Option[String] = None, deserializer: Option[String] = None): Agent[T] = {
+        new  Agent[T](agentId, brokers)(serializer, deserializer)
+    }    
+    def apply[T](config :AgentConfig)
+        ( serializer: Option[String] , deserializer: Option[String] ): Agent[T] = {
+        new  Agent[T](config)(serializer, deserializer)
+    }
+    def apply[T](agentId: AgentId, brokers: List[String]): Agent[T] = {
+        new  Agent[T](agentId, brokers)(None, None)
     }
 }

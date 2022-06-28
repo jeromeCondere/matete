@@ -8,46 +8,21 @@ import org.apache.kafka.clients.consumer._
 import  java.util
 import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
+import com.matete.mas.configuration._
 
 case class AgentId(id: String)
 
-trait AgentLike[T] {
-    /***
-     * send message to another agent
-     * 
-     ***/
-    def init: Unit = {}
-    def send(agentIdReceiver: AgentId, message: T)
-    def send(agentId: AgentId, agentMessage: String)
-    def receive(agentMessages: List[AgentMessage[T]])
-    def receiveSimpleMessages(agentMessages: List[String])
+// change to H <: AgentConfig
 
-    def suicide: Unit
-    def broadcast(message: String)
-    def forcedie: Unit
-    def die: Unit
-    def join(agentId: AgentId)
-    def join(agentIds: List[AgentId])
-    def disconnect(agentId: AgentId)
-    def run
-    def pollingLoop
-    def getTopic(agentId: AgentId): String = agentId.id+"-topic"
-    def getTopicGroupBase(agentId: AgentId): String = getTopic(agentId)+"-group"
-    
-}
+abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None) extends AgentLike[T] {
 
-
-abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
-(initProducerProperties: Map[String, Properties] => Map[String, Properties] = id => id,  
-    initConsumersProperties:  Map[String, Properties] => Map[String, Properties] = id => id)
-(implicit serializer: Option[String] = None, deserializer: Option[String] = None) extends AgentLike[T] {
-
+    val agentId: AgentId = AgentId(configuration.id)
+    val brokers = configuration.brokers
     val GENERAL_POOL: String = "GENERAL_AGENT_POOL"
-    val TOPIC: String = getTopic(agentId)
+    val TOPIC: String = getTopic(AgentId(configuration.id))
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
-     //TODO: add list of agent ids that are connected to the agent
 
     def initDefaultProducersProperties: Map[String, Properties] = {
          val  propsString = new Properties()
@@ -61,16 +36,15 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         propsAgentMessage.put("bootstrap.servers", brokers.mkString(","))
   
         propsAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        serializer match {
+        defaultSerializer match {
             case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
             case None => propsAgentMessage.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer") //use avro
         }
         propsAgentMessage.put("compression.type", "snappy")
 
-        Map("stringProducerProperties" -> propsString, "agentMessageProducerProperties" -> propsAgentMessage)
+        Map("defaultStringProducer" -> propsString, "defaultAgentMessageProducer" -> propsAgentMessage)
 
     }
-    val propsForProducers: Map[String, Properties] =  initProducerProperties(initDefaultProducersProperties)
 
  
 
@@ -88,7 +62,7 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
   
         propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-        deserializer match {
+        defaultDeserializer match {
             case Some(deserializerClass) => propsConsumerAgentMessage.put("value.deserializer", deserializerClass)
             case None => propsConsumerAgentMessage.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer") //use avro
         }
@@ -96,20 +70,78 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
         propsConsumerAgentMessage.put("enable.auto.commit", "false")
 
 
-        Map("stringConsumerProperties" -> propsConsumerString, "agentMessageConsumerProperties" -> propsConsumerAgentMessage)
-    }  
-  
-    val propsForConsumer: Map[String, Properties] = initConsumersProperties(initDefaultConsumersProperties)
+        Map("defaultStringConsumer" -> propsConsumerString, "defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
+    } 
+
+
+    protected def initProducersProperties: Map[String, Properties] = {
+        initDefaultProducersProperties ++ (configuration.producers match {
+        
+            case Some(producersList) => producersList.foldLeft(Map.empty[String, Properties]){
+                    case(mapProp, producerConfig) =>    val  props = new Properties()
+                        props.put("bootstrap.servers", brokers.mkString(","))
+                
+                        props.put("key.serializer", producerConfig.keySerializer)
+                        props.put("value.serializer", producerConfig.valueSerializer)
+                        props.put("compression.type", producerConfig.compressionType)
+                        producerConfig.additionalParameters.toList.flatten.foreach{
+                            case Parameter(k,v) => props.put(k,v)
+                        
+                        }
+                        mapProp + (producerConfig.name ->  props)
+                }
+            case None => Map.empty[String, Properties]
+
+        })
+    }
+
+    protected def initConsumerProperties: Map[String, Properties] = {
+        initDefaultConsumersProperties ++ (configuration.consumers match {
+        
+            case Some(consumerList) => consumerList.foldLeft(Map.empty[String, Properties]){
+                    case(mapProp, consumerConfig) =>    val  props = new Properties()
+                        props.put("bootstrap.servers", brokers.mkString(","))
+                
+                        props.put("key.deserializer", consumerConfig.keyDeserializer)
+                        props.put("value.deserializer", consumerConfig.valueDeserializer)
+                        props.put("group.id", consumerConfig.groupId)
+                        props.put("enable.auto.commit", consumerConfig.autoCommit)
+                        consumerConfig.additionalParameters.toList.flatten.foreach{
+                            case Parameter(k,v) => props.put(k,v)
+                        
+                        }
+                        mapProp + (consumerConfig.name ->  props)
+                }
+            case None => Map.empty[String, Properties]
+        })
+    }
+
+    val propsForProducers: Map[String, Properties] =  initProducersProperties
+    val propsForConsumers: Map[String, Properties] = initConsumerProperties
 
 
 
-    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("stringProducerProperties"))
-    protected val agentMessageProducer = new KafkaProducer[String, AgentMessage[T]](propsForProducers("agentMessageProducerProperties"))   
+    // take only the agent message producers
+    protected val producers: Map[String, KafkaProducer[String, AgentMessage[T]]] = propsForProducers.map{
+        case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props) )
+    }.filter(_._1 != "defaultStringProducer")
+    protected val agentMessageProducer = producers("defaultAgentMessageProducer")  
+    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("defaultStringProducer"))
 
-    protected val stringConsumer = new KafkaConsumer[String, String](propsForConsumer("stringConsumerProperties"))
-    protected val agentMessageConsumer = new KafkaConsumer[String, AgentMessage[T]](propsForConsumer("agentMessageConsumerProperties")) 
 
-    this.agentMessageConsumer.subscribe(util.Collections.singletonList(TOPIC))
+    // take only the agent message consumers
+    protected val consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
+        case (name,props) => (name, new KafkaConsumer[String, AgentMessage[T]](props) )
+    }.filter(_._1 != "defaultStringConsumer")
+    protected val agentMessageConsumer = consumers("defaultAgentMessageConsumer")
+    protected val stringConsumer = new KafkaConsumer[String, String](propsForConsumers("defaultStringConsumer"))
+
+
+    consumers.foreach{
+        case(_, kafkaConsumer) => kafkaConsumer.subscribe(util.Collections.singletonList(TOPIC))
+    }
+
+
     this.stringConsumer.subscribe(util.Collections.singletonList(TOPIC))
 
     override def join(agentId: AgentId) = {
@@ -142,15 +174,14 @@ abstract class AbstractAgent[T](agentId: AgentId, brokers: List[String])
     }
 
     override def die: Unit = {
-      this.agentMessageConsumer.close
+        
+      this.consumers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
       this.stringConsumer.close
-      this.agentMessageProducer.close
+      this.producers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
       this.stringProducer.close
+
     }
 
     def forcedie: Unit = this.wantToDie = true
-
-
-     
 
 }

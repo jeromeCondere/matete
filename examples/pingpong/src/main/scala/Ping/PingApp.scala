@@ -12,6 +12,10 @@ import org.apache.logging.log4j.LogManager
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
 import scala.collection.JavaConverters._
+import com.matete.mas.configuration.DefaultConfig.defaultConfig
+
+
+
 object PingApp extends App {
     val topicName = "Ping-topic"
     val newTopics = List(
@@ -57,7 +61,7 @@ object PingApp extends App {
 }
 
 
-class Ping(brokers: List[String]) extends Agent(AgentId("Ping"), brokers)()() with  Runnable {
+class Ping(brokers: List[String]) extends Agent(defaultConfig(brokers = brokers, agentId = AgentId("Ping")))() with  Runnable {
     
     override def receiveSimpleMessages(agentMessages: List[String]) = {
         val e = agentMessages.filter(_ == "Pong") 
