@@ -12,8 +12,15 @@ import com.matete.mas.configuration._
 
 case class AgentId(id: String)
 
-// change to H <: AgentConfig
-
+/**
+  * 
+  *
+  * @param configuration agent configuration
+  * @param defaultSerializer agent message serializer
+  * @param defaultDeserializer agent message deserializer
+  * 
+  * @todo change to H <: AgentConfig
+  */ 
 abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None) extends AgentLike[T] {
 
     val agentId: AgentId = AgentId(configuration.id)
@@ -153,6 +160,12 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         this.agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
     }  
 
+    /***
+     * send message to agentIdReceiver
+     *  @param agentIdReceiver  agent that the message is sent to
+     *  @param message message sent to agentIdReceiver
+     * 
+     ***/
     override  def send(agentIdReceiver: AgentId, message: T) = {
         // get topic from receiver and then  send it
         val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", AgentMessage(this.agentId, message))
@@ -162,20 +175,27 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
    
     override  def send(agentIdReceiver: AgentId, agentMessage: String) = {
-        val record = new ProducerRecord(getTopic(agentIdReceiver), s"from_${this.agentId.id}_to_${agentIdReceiver.id}${this.stringKeySuffix}", agentMessage)
+        val record = new ProducerRecord(getStringTopic(agentIdReceiver), s"from_${this.agentId.id}_to_${agentIdReceiver.id}${this.stringKeySuffix}", agentMessage)
         this.stringProducer.send(record)
     }
 
-
+    /***
+     * send message to agentIdReceiver
+     * @param agentIdReceiver  agent that the message is sent to
+     * @param message message sent to agentIdReceiver
+     * 
+     ***/
     override def broadcast(message: String): Unit = {
         val record = new ProducerRecord(this.GENERAL_POOL, agentId.id, message)
         this.stringProducer.send(record)
-        
     }
 
+    /***
+     * close all the consumers and producers
+     ***/
     override def die: Unit = {
         
-      this.consumers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
+      this.consumers.foreach{ case(_, kafkaConsumer) => kafkaConsumer.close }
       this.stringConsumer.close
       this.producers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
       this.stringProducer.close

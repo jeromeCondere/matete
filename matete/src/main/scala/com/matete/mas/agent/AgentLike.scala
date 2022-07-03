@@ -21,6 +21,7 @@ trait AgentLike[T] {
     def run
     def pollingLoop
     def getTopic(agentId: AgentId): String = agentId.id+"-topic"
+    def getStringTopic(agentId: AgentId): String = agentId.id+"-topic-str"
     def getTopicGroupBase(agentId: AgentId): String = getTopic(agentId)+"-group"
     
 }
