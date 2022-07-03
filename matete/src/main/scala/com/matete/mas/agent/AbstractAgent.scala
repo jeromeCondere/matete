@@ -9,6 +9,8 @@ import  java.util
 import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
 import com.matete.mas.configuration._
+import org.apache.avro.Schema
+import org.apache.avro.Schema.Parser
 
 case class AgentId(id: String)
 
@@ -31,13 +33,9 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
 
+
+
     def initDefaultProducersProperties: Map[String, Properties] = {
-         val  propsString = new Properties()
-        propsString.put("bootstrap.servers", brokers.mkString(","))
-  
-        propsString.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        propsString.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        propsString.put("compression.type", "snappy")
 
         val  propsAgentMessage = new Properties()
         propsAgentMessage.put("bootstrap.servers", brokers.mkString(","))
@@ -45,43 +43,37 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         propsAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
         defaultSerializer match {
             case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
-            case None => propsAgentMessage.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer") //use avro
+            case None => propsAgentMessage.put("value.serializer", "com.matete.mas.serialization.AgentMessageStringSerializer") //use avro
         }
         propsAgentMessage.put("compression.type", "snappy")
 
-        Map("defaultStringProducer" -> propsString, "defaultAgentMessageProducer" -> propsAgentMessage)
+        Map("defaultAgentMessageProducer" -> propsAgentMessage)
 
     }
 
  
 
-    protected def initDefaultConsumersProperties: Map[String, Properties] = {
-        val  propsConsumerString = new Properties()
-        propsConsumerString.put("bootstrap.servers", brokers.mkString(","))
-  
-        propsConsumerString.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-        propsConsumerString.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-        propsConsumerString.put("group.id", getTopicGroupBase(agentId)+"-classic")
-        propsConsumerString.put("enable.auto.commit", "false")
-
+    def initDefaultConsumersProperties: Map[String, Properties] = {
 
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
+        propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-classic")
+        propsConsumerAgentMessage.put("enable.auto.commit", "false")
   
         propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         defaultDeserializer match {
             case Some(deserializerClass) => propsConsumerAgentMessage.put("value.deserializer", deserializerClass)
-            case None => propsConsumerAgentMessage.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer") //use avro
+            case None => propsConsumerAgentMessage.put("value.deserializer", "com.matete.mas.deserialization.AgentMessageStringDeserializer") //use avro
         }
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
         propsConsumerAgentMessage.put("enable.auto.commit", "false")
 
 
-        Map("defaultStringConsumer" -> propsConsumerString, "defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
+        Map("defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
     } 
 
 
-    protected def initProducersProperties: Map[String, Properties] = {
+    def initProducersProperties: Map[String, Properties] = {
         initDefaultProducersProperties ++ (configuration.producers match {
         
             case Some(producersList) => producersList.foldLeft(Map.empty[String, Properties]){
@@ -102,7 +94,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         })
     }
 
-    protected def initConsumerProperties: Map[String, Properties] = {
+    def initConsumerProperties: Map[String, Properties] = {
         initDefaultConsumersProperties ++ (configuration.consumers match {
         
             case Some(consumerList) => consumerList.foldLeft(Map.empty[String, Properties]){
@@ -172,12 +164,6 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         this.agentMessageProducer.send(record)
     }
 
-
-   
-    override  def send(agentIdReceiver: AgentId, agentMessage: String) = {
-        val record = new ProducerRecord(getStringTopic(agentIdReceiver), s"from_${this.agentId.id}_to_${agentIdReceiver.id}${this.stringKeySuffix}", agentMessage)
-        this.stringProducer.send(record)
-    }
 
     /***
      * send message to agentIdReceiver

@@ -16,7 +16,7 @@ case class ProducerConfig(
     name: String,
     description: Option[String] = None,
     keySerializer: String =  "org.apache.kafka.common.serialization.StringSerializer",
-    valueSerializer: String = "org.apache.kafka.common.serialization.StringSerializer",
+    valueSerializer: String = "com.matete.mas.serialization.AgentMessageStringSerializer",
     compressionType: String = "snappy",
     additionalParameters: Option[List[Parameter]]
 )
@@ -25,7 +25,7 @@ case class ConsumerConfig(
     name: String,
     description: Option[String] = None,
     keyDeserializer: String =  "org.apache.kafka.common.serialization.StringDeserializer",
-    valueDeserializer: String = "org.apache.kafka.common.serialization.StringDeserializer",
+    valueDeserializer: String = "com.matete.mas.deserialization.AgentMessageStringDeserializer",
     autoCommit: String = "false",
     groupId: String,
     additionalParameters: Option[List[Parameter]]
