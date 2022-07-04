@@ -123,25 +123,23 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     // take only the agent message producers
     protected val producers: Map[String, KafkaProducer[String, AgentMessage[T]]] = propsForProducers.map{
         case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props) )
-    }.filter(_._1 != "defaultStringProducer")
+    }
+
     protected val agentMessageProducer = producers("defaultAgentMessageProducer")  
-    protected val stringProducer = new KafkaProducer[String, String](propsForProducers("defaultStringProducer"))
 
 
     // take only the agent message consumers
     protected val consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
         case (name,props) => (name, new KafkaConsumer[String, AgentMessage[T]](props) )
-    }.filter(_._1 != "defaultStringConsumer")
+    }
     protected val agentMessageConsumer = consumers("defaultAgentMessageConsumer")
-    protected val stringConsumer = new KafkaConsumer[String, String](propsForConsumers("defaultStringConsumer"))
 
 
+    // subscribe to the agent topic
     consumers.foreach{
         case(_, kafkaConsumer) => kafkaConsumer.subscribe(util.Collections.singletonList(TOPIC))
     }
 
-
-    this.stringConsumer.subscribe(util.Collections.singletonList(TOPIC))
 
     override def join(agentId: AgentId) = {
         this.agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))
@@ -165,16 +163,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     }
 
 
-    /***
-     * send message to agentIdReceiver
-     * @param agentIdReceiver  agent that the message is sent to
-     * @param message message sent to agentIdReceiver
-     * 
-     ***/
-    override def broadcast(message: String): Unit = {
-        val record = new ProducerRecord(this.GENERAL_POOL, agentId.id, message)
-        this.stringProducer.send(record)
-    }
+
 
     /***
      * close all the consumers and producers
@@ -182,9 +171,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     override def die: Unit = {
         
       this.consumers.foreach{ case(_, kafkaConsumer) => kafkaConsumer.close }
-      this.stringConsumer.close
       this.producers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
-      this.stringProducer.close
 
     }
 

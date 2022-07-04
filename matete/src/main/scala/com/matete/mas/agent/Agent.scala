@@ -46,12 +46,6 @@ extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
                 while(wantToDie == false){
 
 
-                    val recordsStringList = stringConsumer.poll(this.pollRate).iterator.asScala.toList
-                    .filter(c => c.key!= null && c.key.endsWith(this.stringKeySuffix)).map{
-                        record => record.value
-                    }
-                    receiveSimpleMessages(recordsStringList)
-
                     val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList
                     .filter(_.key!=null)
                     .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
@@ -69,7 +63,6 @@ extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
                             consumer.commitAsync
 
                     }
-                    stringConsumer.commitAsync
                     agentMessageConsumer.commitAsync
                     
                 } 

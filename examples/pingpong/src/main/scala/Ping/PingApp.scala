@@ -13,6 +13,7 @@ import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
 import scala.collection.JavaConverters._
 import com.matete.mas.configuration.DefaultConfig.defaultConfig
+import com.matete.mas.agent.AgentMessage
 
 
 
@@ -61,10 +62,10 @@ object PingApp extends App {
 }
 
 
-class Ping(brokers: List[String]) extends Agent(defaultConfig(brokers = brokers, agentId = AgentId("Ping")))() with  Runnable {
+class Ping(brokers: List[String]) extends Agent[String](defaultConfig(brokers = brokers, agentId = AgentId("Ping")))() with  Runnable {
     
-    override def receiveSimpleMessages(agentMessages: List[String]) = {
-        val e = agentMessages.filter(_ == "Pong") 
+    override def receive(agentMessages: List[AgentMessage[String]], consumerName: String) = {
+        val e = agentMessages.filter(_.message == "Pong") 
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
             logger.info(s"Pong received size ${e.size}, sending Ping")
