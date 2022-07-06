@@ -1,0 +1,13 @@
+id: my-agent
+producers:
+  - name: p1
+    keySerializer: "org.apache.kafka.common.serialization.StringSerializer"
+    valueSerializer: "blabla"
+
+consumers:
+  - name: c2
+    keyDeserializer: "org.apache.kafka.common.serialization.StringDeserializer"
+    valueDeserializer: "blabla"
+    autoCommit: "false"
+    groupId: einfr
+

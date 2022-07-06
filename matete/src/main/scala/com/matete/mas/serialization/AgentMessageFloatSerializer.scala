@@ -5,14 +5,14 @@ import java.util
 import org.apache.kafka.common.serialization.Serializer
 import com.matete.mas.agent.AgentMessage
 
-class AgentMessageStringSerializer extends Serializer[AgentMessage[String]]{
+class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]]{
 
   override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
 
   }
 
 
-  override def serialize(topic:String, data: AgentMessage[String]):Array[Byte] = {
+  override def serialize(topic:String, data: AgentMessage[Float]):Array[Byte] = {
     try {
       val byteOut = new ByteArrayOutputStream()
       val objOut = new ObjectOutputStream(byteOut)
