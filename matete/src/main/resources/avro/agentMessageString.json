@@ -1,9 +1,0 @@
-{
-    "namespace": "kakfa-avro.matete",
-     "type": "record",
-     "name": "user",
-     "fields":[
-         {  "name": "agentId", "type": "string"},
-         {   "name": "message",  "type": "string"}
-     ]
-}

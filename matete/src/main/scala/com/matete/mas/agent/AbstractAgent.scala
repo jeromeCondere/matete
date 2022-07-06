@@ -29,6 +29,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     val brokers = configuration.brokers
     val GENERAL_POOL: String = "GENERAL_AGENT_POOL"
     val TOPIC: String = getTopic(AgentId(configuration.id))
+    val description = configuration.description
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
