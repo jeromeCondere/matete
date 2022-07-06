@@ -52,7 +52,6 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.apache.kafka" % "kafka-streams" % kafkaVersion,
   libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion,
   libraryDependencies += "org.apache.kafka" % "kafka-clients" % kafkaVersion,
-  libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
   //libraryDependencies += "ch.qos.logback" % "logback-classic" % logback,
 
   libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % log4jApiScala,
@@ -95,6 +94,7 @@ lazy val examples = (project in file("examples"))
   )
   .aggregate(pingpong)
   .aggregate(withconfig)
+  .aggregate(bank)
   
 
 lazy val pingpong = (project in file("examples/pingpong"))
@@ -108,4 +108,11 @@ lazy val pingpong = (project in file("examples/pingpong"))
 lazy val withconfig = (project in file("examples/withconfig"))
   .settings(commonSettings)
   .addExampleConfig(withConfigClass, WithConfig)
+  .dependsOn(matete)
+  
+lazy val bank = (project in file("examples/bank"))
+  .settings(commonSettings,
+    libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion
+  )
+  .addExampleConfig(bankClass, BankConfig)
   .dependsOn(matete)

@@ -2,15 +2,13 @@ package com.matete.mas.agent
 
 import scala.util.Try
 import java.util.Properties
-import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
 import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
 import com.matete.mas.configuration._
-import org.apache.avro.Schema
-import org.apache.avro.Schema.Parser
+
 
 case class AgentId(id: String)
 

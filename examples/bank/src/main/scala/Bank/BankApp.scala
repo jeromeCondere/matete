@@ -1,4 +1,4 @@
-package com.matete.examples.withconfig
+package com.matete.examples.bank
 
 import com.matete.mas.agent.Agent
 import com.matete.mas.agent.AgentId
@@ -17,7 +17,7 @@ import scala.collection.JavaConverters._
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
 
-object WithConfigApp extends App {
+object BankApp extends App {
     val topicName = "WithConfig-topic"
     val newTopics = List(
      new NewTopic(topicName, 1, 1.toShort) 

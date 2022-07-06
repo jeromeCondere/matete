@@ -1,6 +1,5 @@
 package com.matete.mas.agent
 import java.util.Properties
-import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
 import  java.util
