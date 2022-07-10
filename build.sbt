@@ -63,6 +63,7 @@ lazy val commonSettings = Seq(
   libraryDependencies += "io.circe" %% "circe-yaml" % circe,
   libraryDependencies += "io.circe" %% "circe-generic" % circe,
   libraryDependencies += "io.circe" %% "circe-generic-extras" % circe,
+  libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
 
   resolvers ++= Seq( "confluent" at "https://packages.confluent.io/maven/"),
   publishTo := {
@@ -109,10 +110,16 @@ lazy val withconfig = (project in file("examples/withconfig"))
   .settings(commonSettings)
   .addExampleConfig(withConfigClass, WithConfig)
   .dependsOn(matete)
+
+lazy val bankUtils = (project in file("examples/bank/bankUtils")).settings(commonSettings).dependsOn(matete)
   
 lazy val bank = (project in file("examples/bank"))
   .settings(commonSettings,
     libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion
   )
   .addExampleConfig(bankClass, BankConfig)
+  .addExampleConfig(client1Class, Client1Config)
+  .addExampleConfig(client2Class, Client2Config)
   .dependsOn(matete)
+  .dependsOn(bankUtils)
+

@@ -1,0 +1,30 @@
+{
+  "type" : "record",
+  "namespace" : "DataFlair",
+  "name" : "not",
+  "fields" : [
+      {
+        "name": "agentId",
+        "type":{
+          "type": "record",
+          "name": "agentid",
+          "fields" : [
+            {"name": "id", "type": "string"}
+          ]
+        }
+      },
+      { "name" : "message" , "type" : {
+            "name": "my_message",
+            "type": "record",
+            "fields" : [
+              {"label": "id", "type": ["string", null]},
+              {"from": "id", "type": ["string", null]},
+              {"to": "id", "type": ["string", null]},
+              {"amount": "id", "type": "double"},
+              {"typeTransaction": "id", "type": "string"},
+              {"message": "id", "type": ["string", null]}
+            ]
+          }
+      }
+  ]
+}
