@@ -1,4 +1,5 @@
 package com.matete.mas.agent
+
 import java.util.Properties
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
@@ -10,8 +11,9 @@ import com.matete.mas.configuration.AgentConfig
 import com.matete.mas.configuration.DefaultConfig.defaultConfig
 
 class Agent[T](configuration: AgentConfig)
-( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None) 
+( protected val defaultSerializer: Option[String] = None, protected val defaultDeserializer: Option[String] = None) 
 extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
+    print(",epozd,")
     //polling rate
     var pollRate: Duration = Duration.ofMillis(1000)
       /***
@@ -72,6 +74,7 @@ extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
                 die
             }
     }
+
     override def run = {
         init
         logger.info(s"Start polling loop")

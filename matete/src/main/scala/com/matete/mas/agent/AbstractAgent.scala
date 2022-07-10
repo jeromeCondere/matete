@@ -25,34 +25,34 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
     val agentId: AgentId = AgentId(configuration.id)
     val brokers = configuration.brokers
-    val GENERAL_POOL: String = "GENERAL_AGENT_POOL"
-    val TOPIC: String = getTopic(AgentId(configuration.id))
+    def GENERAL_POOL: String = "GENERAL_AGENT_POOL"
+    def TOPIC: String = getTopic(AgentId(configuration.id))
     val description = configuration.description
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
 
 
+    protected def initDefaultProducersProperties: Map[String, Properties] = {
+        logger.debug("Init default producers properties")
 
-    def initDefaultProducersProperties: Map[String, Properties] = {
-
-        val  propsAgentMessage = new Properties()
-        propsAgentMessage.put("bootstrap.servers", brokers.mkString(","))
+        val  propsAgentMessageProducer = new Properties()
+        propsAgentMessageProducer.put("bootstrap.servers", brokers.mkString(","))
   
-        propsAgentMessage.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        propsAgentMessageProducer.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
         defaultSerializer match {
-            case Some(serializerClass) => propsAgentMessage.put("value.serializer", serializerClass)
-            case None => propsAgentMessage.put("value.serializer", "com.matete.mas.serialization.AgentMessageStringSerializer") //use avro
+            case Some(serializerClass) => propsAgentMessageProducer.put("value.serializer", serializerClass)
+            case None => propsAgentMessageProducer.put("value.serializer", "com.matete.mas.serialization.AgentMessageStringSerializer") //use avro
         }
-        propsAgentMessage.put("compression.type", "snappy")
+        propsAgentMessageProducer.put("compression.type", "snappy")
 
-        Map("defaultAgentMessageProducer" -> propsAgentMessage)
-
+        Map("defaultAgentMessageProducer" -> propsAgentMessageProducer)
     }
 
  
 
-    def initDefaultConsumersProperties: Map[String, Properties] = {
+    protected def initDefaultConsumersProperties: Map[String, Properties] = {
+        logger.debug("Init default consumers properties")
 
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
@@ -72,7 +72,9 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     } 
 
 
-    def initProducersProperties: Map[String, Properties] = {
+    protected def initProducersProperties: Map[String, Properties] = {
+        logger.debug("Init producers properties")
+
         initDefaultProducersProperties ++ (configuration.producers match {
         
             case Some(producersList) => producersList.foldLeft(Map.empty[String, Properties]){
@@ -86,14 +88,18 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                             case Parameter(k,v) => props.put(k,v)
                         
                         }
+                        println("dfdrgr")
                         mapProp + (producerConfig.name ->  props)
                 }
-            case None => Map.empty[String, Properties]
+            case None => logger.debug("no additional producers")
+                Map.empty[String, Properties]
 
         })
     }
 
-    def initConsumerProperties: Map[String, Properties] = {
+    protected def initConsumerProperties: Map[String, Properties] = {
+        logger.debug("Init consumer properties")
+
         initDefaultConsumersProperties ++ (configuration.consumers match {
         
             case Some(consumerList) => consumerList.foldLeft(Map.empty[String, Properties]){
@@ -110,28 +116,30 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                         }
                         mapProp + (consumerConfig.name ->  props)
                 }
-            case None => Map.empty[String, Properties]
+            case None => logger.debug("no additional consumers")
+                Map.empty[String, Properties]
         })
     }
 
-    val propsForProducers: Map[String, Properties] =  initProducersProperties
-    val propsForConsumers: Map[String, Properties] = initConsumerProperties
 
-
+    def propsForProducers: Map[String, Properties] =  initProducersProperties
+    def propsForConsumers: Map[String, Properties] = initConsumerProperties
+    logger.info("props abstract 2 " + propsForProducers)
 
     // take only the agent message producers
-    protected val producers: Map[String, KafkaProducer[String, AgentMessage[T]]] = propsForProducers.map{
-        case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props) )
+    protected def producers: Map[String, KafkaProducer[String, AgentMessage[T]]] = propsForProducers.map{
+        case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props))
     }
+    logger.info("producers abstract " + this.producers)
 
-    protected val agentMessageProducer = producers("defaultAgentMessageProducer")  
+    protected def agentMessageProducer = producers("defaultAgentMessageProducer")  
 
 
     // take only the agent message consumers
-    protected val consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
+    protected def consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
         case (name,props) => (name, new KafkaConsumer[String, AgentMessage[T]](props) )
     }
-    protected val agentMessageConsumer = consumers("defaultAgentMessageConsumer")
+    protected def agentMessageConsumer = consumers("defaultAgentMessageConsumer")
 
 
     // subscribe to the agent topic
@@ -155,13 +163,12 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
      *  @param message message sent to agentIdReceiver
      * 
      ***/
-    override  def send(agentIdReceiver: AgentId, message: T) = {
+    override  def send(agentIdReceiver: AgentId, message: T, producer: String = "defaultAgentMessageProducer") = {
         // get topic from receiver and then  send it
+        logger.debug(s"Sending message to ${agentIdReceiver.id}")
         val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", AgentMessage(this.agentId, message))
-        this.agentMessageProducer.send(record)
+        this.producers(producer).send(record)
     }
-
-
 
 
     /***

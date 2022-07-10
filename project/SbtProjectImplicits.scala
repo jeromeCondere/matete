@@ -9,6 +9,7 @@ import sbtassembly.AssemblyPlugin.autoImport.baseAssemblySettings
 object SbtProjectImplicits {
     implicit class projectWithexample(x: Project) {
         def addExampleConfig(classname: String, Config: Configuration) = {
+
             x
             .enablePlugins(sbtassembly.AssemblyPlugin)
             .configs(Config)
@@ -32,6 +33,8 @@ object SbtProjectImplicits {
                 }
             ))  : _*)
             
+            
         }
+        
     }
 }

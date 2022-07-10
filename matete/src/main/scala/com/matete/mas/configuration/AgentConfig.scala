@@ -18,7 +18,8 @@ case class ProducerConfig(
     keySerializer: String =  "org.apache.kafka.common.serialization.StringSerializer",
     valueSerializer: String = "com.matete.mas.serialization.AgentMessageStringSerializer",
     compressionType: String = "snappy",
-    additionalParameters: Option[List[Parameter]]
+    schemaRegistryUrl: Option[String] = None,
+    additionalParameters: Option[List[Parameter]] = None
 )
 
 case class ConsumerConfig(

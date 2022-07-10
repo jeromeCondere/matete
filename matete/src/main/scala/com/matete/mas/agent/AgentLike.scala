@@ -3,7 +3,7 @@ package com.matete.mas.agent
 trait AgentLike[T] {
     
     def init: Unit = {}
-    def send(agentIdReceiver: AgentId, message: T)
+    def send(agentIdReceiver: AgentId, message: T, producer: String)
     def receive(agentMessages: List[AgentMessage[T]], consumerName: String)
     def receiveSimpleMessages(agentMessages: List[String])
 

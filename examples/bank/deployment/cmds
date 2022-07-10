@@ -1,0 +1,6 @@
+docker run -d -p 8081:8081 --add-host=host.docker.internal:host-gateway -e \
+    SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=host.docker.internal:2181 \
+    -e SCHEMA_REGISTRY_HOST_NAME=localhost \
+    -e SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://host.docker.internal:9092 \
+    -e SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081 \
+    -e SCHEMA_REGISTRY_DEBUG=true confluentinc/cp-schema-registry
