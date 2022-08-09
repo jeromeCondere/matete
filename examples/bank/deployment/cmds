@@ -4,3 +4,11 @@ docker run -d -p 8081:8081 --add-host=host.docker.internal:host-gateway -e \
     -e SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://host.docker.internal:9092 \
     -e SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081 \
     -e SCHEMA_REGISTRY_DEBUG=true confluentinc/cp-schema-registry
+
+
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic Bank-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic Client1-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic Client2-topic
+
+
+kafka-console-consumer.sh --topic Bank-topic --from-beginning --bootstrap-server localhost:9092

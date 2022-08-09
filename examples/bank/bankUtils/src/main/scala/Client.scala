@@ -21,7 +21,7 @@ trait  ClientLike {
 
 }
 
-abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: AgentId)( var moneyOnme: Double, accountId: String) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = agentId))(null,"http://localhost:8081") 
+abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: AgentId)( var moneyOnme: Double, val accountId: String) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = agentId))(null,"http://localhost:8081") 
     with ClientLike {
 
     val schema = Transaction.initSchema 
@@ -30,12 +30,12 @@ abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: Agen
      * 
      **/
     def deposit(amount: Double, label: String) = {
-        if( amount > moneyOnme)
+        if( amount <= moneyOnme)
             this.send(bankAgentId,
                 Transaction(
                     label = Some(s"${agentId.id}-deposit"),
-                    from = Some(s"${agentId.id}"),
-                    to = Some(s"${agentId.id}"),
+                    from = Some(s"${accountId}"),
+                    to = Some(s"${accountId}"),
                     amount = amount,
                     typeTransaction = "deposit",
                     message = Some(s"as client ${agentId.id} I make a deposit")
@@ -52,8 +52,8 @@ abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: Agen
         this.send(bankAgentId,
             Transaction(
                 label = Some(s"${agentId.id}-withdrawal"),
-                from = Some(s"${agentId.id}"),
-                to = Some(s"${agentId.id}"),
+                from = Some(s"${accountId}"),
+                to = Some(s"${accountId}"),
                 amount = amount,
                 typeTransaction = "withdrawal",
                 message = Some(s"as client ${agentId.id}")
@@ -90,7 +90,6 @@ abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: Agen
    override def avroToMessage(record: GenericRecord) = {
         val agentIdRecord = record.get("agentId").asInstanceOf[GenericRecord]
         val messageRecord = record.get("message").asInstanceOf[GenericRecord]
-
 
         AgentMessage(
             AgentId(agentIdRecord.get("id").toString), 

@@ -13,9 +13,8 @@ import com.matete.mas.configuration.DefaultConfig.defaultConfig
 class Agent[T](configuration: AgentConfig)
 ( protected val defaultSerializer: Option[String] = None, protected val defaultDeserializer: Option[String] = None) 
 extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
-    print(",epozd,")
     //polling rate
-    var pollRate: Duration = Duration.ofMillis(1000)
+    def pollRate: Duration = Duration.ofMillis(1000)
       /***
        * I 
        ***/
@@ -52,7 +51,8 @@ extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
                     .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
                         record =>  record.value
                     }
-                    receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
+                    if(!recordsAgentMessageList.isEmpty)
+                        receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
 
                     consumers.filterNot(tuple => List("defaultStringConsumer", "defaultAgentMessageConsumer").contains(tuple._1)).foreach {
                         case (consumerName, consumer) => val recordsAgentMessageListNotDefault = consumer.poll(this.pollRate).iterator.asScala.toList
@@ -60,7 +60,8 @@ extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
                             .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
                                 record => record.value
                             }
-                            receive(recordsAgentMessageListNotDefault, consumerName)
+                            if(!recordsAgentMessageListNotDefault.isEmpty)
+                                receive(recordsAgentMessageListNotDefault, consumerName)
                             consumer.commitAsync
 
                     }

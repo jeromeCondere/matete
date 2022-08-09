@@ -23,6 +23,8 @@ import com.matete.examples.bank.utils.{Transaction, Client}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericRecord
+import java.time.Duration
+
 
 object Client2App extends App {
     val topicName = "Client2-topic"
@@ -31,7 +33,7 @@ object Client2App extends App {
     )
     
 
-    val logger = LogManager.getLogger("Client1App")
+    val logger = LogManager.getLogger("Client2App")
     val broker = if(args.size > 1) args(1) else args(0)
 
 
@@ -54,21 +56,23 @@ object Client2App extends App {
     }
 
     logger.info("start running client2 agent")
-    val client2 = new Client2(List(broker), AgentId("myBank"))
-
+    val client2 = new Client2(List(broker), AgentId("Bank"))
     client2.run
 }
 
-class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(brokers, AgentId("Client2"), bankAgentId)(234, "client_account1"){
-   override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
+class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(brokers, AgentId("Client2"), bankAgentId)(234, "Client2_account") with Runnable{
+    override def pollRate: Duration = Duration.ofMillis(100)
 
+
+   override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
 
         agentMessages.filter(_.message.typeTransaction == "deposit").map(_.message).foreach(
             transaction => {
                 val amount = transaction.amount
-                if(transaction.label == Some("deposit accepted")){
+                if(transaction.label.contains("deposit accepted")){
                     this.moneyOnme = this.moneyOnme - amount
                     this.logger.info(s"Put deposit $amount on my account, I'm very seious")
+                    logger.info("money " + moneyOnme)
                 }
             }
         )
@@ -76,9 +80,10 @@ class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(broker
         agentMessages.filter(_.message.typeTransaction == "withdrawal").map(_.message).foreach(
             transaction => {
                 val amount = transaction.amount
-                if(transaction.label == Some("withdrawal accepted")){
+                if(transaction.label.contains ("withdrawal accepted")){
                     this.moneyOnme = this.moneyOnme + amount
                     this.logger.info(s"The withdrawal of $amount has been accepted for my account, I'm serious")
+                    logger.info("money " + moneyOnme)
                 }
             }
         )
@@ -87,6 +92,7 @@ class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(broker
     override def run = {
         init
         logger.info(s"Start polling loop")
+        logger.info("initial money " + moneyOnme)
         withdrawal(5)
         Thread.sleep(2000)
         withdrawal(34)

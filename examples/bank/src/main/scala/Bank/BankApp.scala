@@ -29,6 +29,7 @@ import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.Decoder
 import com.matete.mas.agent.AgentMessage
+import scala.collection.mutable.ListBuffer
 
 object BankApp extends App {
     val topicName = "Bank-topic"
@@ -62,43 +63,49 @@ object BankApp extends App {
     logger.info("start running bank agent")
 
     val bank = new Bank(List(broker))(
-        Map(
-            ("Client1", Account("Client1", "ckr", 23.5, 100)),
-            ("Client1", Account("Client2", "iou", 23.9, 700))
+         ListBuffer(
+             Account("Client1_account", "Client1", 256.5, 1000),
+             Account("Client2_account", "Client2", 1000.9, 700)
         )
     )
 
     bank.run
 
-
-  
 }
 
-class Bank(brokers: List[String])(accounts: Map[String, Account]) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = AgentId("Bank")))(null, "http://localhost:8081") with Runnable{
+class Bank(brokers: List[String])(accounts:  ListBuffer[Account]) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = AgentId("Bank")))(null, "http://localhost:8081") with Runnable{
     val schema = Transaction.initSchema 
 
     override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
         agentMessages.filter(_.message.typeTransaction == "withdrawal").map(_.message).foreach(
             transaction => {
-                val accountToWithdrawFrom = accounts(transaction.to.get)
+                logger.info(s"id to get: ${transaction.to.get}")
+                logger.info(accounts)
+                val accountToWithdrawFrom = accounts.find(_.id == transaction.to.get).get
                 val amountToWithDraw = transaction.amount
+                
                 if(amountToWithDraw < accountToWithdrawFrom.money + accountToWithdrawFrom.overdraft){
-                    accounts(transaction.to.get) = Account(
+
+
+                    val newMoney = accountToWithdrawFrom.money - amountToWithDraw
+                    accounts -= accountToWithdrawFrom
+                    accounts += Account(
                         id = accountToWithdrawFrom.id, 
-                        name = accountToWithdrawFrom.id, 
-                        money = accountToWithdrawFrom.money - amountToWithDraw ,
+                        owner = accountToWithdrawFrom.owner, 
+                        money = newMoney ,
                         overdraft = accountToWithdrawFrom.overdraft
                     ) 
-                    send(AgentId(transaction.from.get), Transaction(
+                    send(AgentId(accountToWithdrawFrom.owner), Transaction(
                         label = Some(s"withdrawal accepted"),
-                        from = Some(s"$agentId"),
-                        to = transaction.from,
+                        from = Some(accountToWithdrawFrom.id),
+                        to = Some(accountToWithdrawFrom.id),
                         amount = amountToWithDraw,
                         typeTransaction = "withdrawal",
                         message = Some(s"the bank (${agentId.id}) has accepted your request, here's your money")
                         )
                     )
-                    logger.info(s"${transaction.to.get} has withdrawn ${accountToWithdrawFrom.money} from his account ${accountToWithdrawFrom.id}")
+                    logger.info(s"${accountToWithdrawFrom.owner} has withdrawn ${amountToWithDraw} from his account ${accountToWithdrawFrom.id}")
+                    logger.info(s"here is his money: ${accounts.find(_.id == transaction.to.get).get.money}")
                 } else {
                     send(AgentId(transaction.from.get), Transaction(
                         label = Some(s"withdrawal refused"),
@@ -109,31 +116,34 @@ class Bank(brokers: List[String])(accounts: Map[String, Account]) extends AvroAg
                         message = Some(s"the bank (${agentId.id}) has refused your request")
                         )
                     )
-                    logger.info(s"${transaction.to.get} has failed to withdrawn ${accountToWithdrawFrom.money} from his account ${accountToWithdrawFrom.id}")
+                    logger.info(s"${accountToWithdrawFrom.owner} has failed to withdrawn ${amountToWithDraw} from his account ${accountToWithdrawFrom.id}")
                 }
             }
         )
 
         agentMessages.filter(_.message.typeTransaction == "deposit").map(_.message).foreach(
             transaction => {
-                val accountToPutDepositOn = accounts(transaction.to.get)
+                val accountToPutDepositOn = accounts.find(_.id == transaction.to.get).get
                 val amountToDeposit = transaction.amount
-                accounts(transaction.to.get) = Account(
+                val newMoney = accountToPutDepositOn.money + amountToDeposit
+                    accounts -= accountToPutDepositOn
+                    accounts += Account(
                     id = accountToPutDepositOn.id, 
-                    name = accountToPutDepositOn.id, 
-                    money = accountToPutDepositOn.money + amountToDeposit,
+                    owner = accountToPutDepositOn.owner, 
+                    money = newMoney,
                     overdraft = accountToPutDepositOn.overdraft
                 ) 
-                send(AgentId(transaction.from.get), Transaction(
+                send(AgentId(accountToPutDepositOn.owner), Transaction(
                     label = Some(s"deposit accepted"),
-                    from = Some(s"$agentId"),
-                    to = transaction.from,
+                    from = Some(accountToPutDepositOn.id),
+                    to = Some(accountToPutDepositOn.id),
                     amount = amountToDeposit,
                     typeTransaction = "deposit",
                     message = Some(s"the bank (${agentId.id}) has accepted your request, deposit accepted")
                     )
                 )
-                logger.info(s"${transaction.to.get} has put ${accountToPutDepositOn.money} from his account ${accountToPutDepositOn.id}")
+                logger.info(s"${accountToPutDepositOn.owner} has put ${amountToDeposit} on his account ${accountToPutDepositOn.id}")
+                logger.info(s"Here is his money: ${accounts.find(_.id == transaction.to.get).get.money}")
             }
 
 
@@ -141,7 +151,7 @@ class Bank(brokers: List[String])(accounts: Map[String, Account]) extends AvroAg
         
     }
 
-    override def messageToAvro(message: Transaction) = {
+        override def messageToAvro(message: Transaction) = {
 
         val avroRecord = new GenericData.Record(schema)
 
@@ -152,25 +162,24 @@ class Bank(brokers: List[String])(accounts: Map[String, Account]) extends AvroAg
         val agentIdRecord = new GenericData.Record(schema.getField("agentId").schema())
         val messageRecord = new GenericData.Record(schema.getField("message").schema())
 
-        agentIdRecord.put("id", this.agentId)
+        agentIdRecord.put("id", this.agentId.id)
         messageRecord.put("label",message.label.getOrElse(null))
         messageRecord.put("from",message.from.getOrElse(null))
         messageRecord.put("to",message.to.getOrElse(null))
         messageRecord.put("amount", message.amount)
         messageRecord.put("typeTransaction",message.typeTransaction)
-        messageRecord.put("message",message.message)
+        messageRecord.put("message",message.message.getOrElse(null))
 
 
         val parser = new Schema.Parser()
         avroRecord.put("agentId", agentIdRecord)
         avroRecord.put("message", messageRecord)
         avroRecord
-    }
+   }
 
    override def avroToMessage(record: GenericRecord) = {
         val agentIdRecord = record.get("agentId").asInstanceOf[GenericRecord]
         val messageRecord = record.get("message").asInstanceOf[GenericRecord]
-
 
         AgentMessage(
             AgentId(agentIdRecord.get("id").toString), 

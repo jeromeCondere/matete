@@ -35,7 +35,7 @@ extends Agent[T](configuration)(
         propsAgentMessageProducer.put("schema.registry.url", schemaRegistryUrl) //use avro
         propsAgentMessageProducer.put("compression.type", "snappy")
 
-        logger.debug("init default producer properties avro")
+        //logger.debug("init default producer properties avro")
         Map("defaultAgentMessageProducer" -> propsAgentMessageProducer)
     }
 
@@ -52,7 +52,7 @@ extends Agent[T](configuration)(
         propsConsumerAgentMessage.put("enable.auto.commit", "false")
         propsConsumerAgentMessage.put("schema.registry.url", schemaRegistryUrl)
 
-        logger.debug("init consumers properties avro")
+        //logger.debug("init consumers properties avro")
         Map("defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
     } 
 
@@ -61,9 +61,6 @@ extends Agent[T](configuration)(
     .map{
         case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props) )
     }
-
-    logger.info(" producers avro "+ this. producers)
-
 
 
     protected val agentAvroMessageProducer = new KafkaProducer[String, GenericRecord](initDefaultProducersProperties("defaultAgentMessageProducer"))
@@ -77,13 +74,14 @@ extends Agent[T](configuration)(
 
     protected val agentAvroMessageConsumer =  new KafkaConsumer[String, GenericRecord](initDefaultConsumersProperties("defaultAgentMessageConsumer"))
     agentAvroMessageConsumer.subscribe(util.Collections.singletonList(TOPIC))
+    logger.info("topic = "+ TOPIC )
 
     override  def send(agentIdReceiver: AgentId, message: T, producer: String = "defaultAgentMessageProducer") = {
         logger.debug(s"Sending message to ${agentIdReceiver.id}")
+        val topicReceiver = getTopic(agentIdReceiver)
+
         if(producer == "defaultAgentMessageProducer"){
             val avroRecord = messageToAvro(message)
-            logger.info(avroRecord)
-
             val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", avroRecord)
             this.agentAvroMessageProducer.send(record)
         } else {
@@ -102,7 +100,15 @@ extends Agent[T](configuration)(
                     .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
                         record =>  record.value
                     }.map(avroToMessage)
-                    receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
+
+
+                    agentAvroMessageConsumer.poll(this.pollRate).iterator.asScala.toList
+
+                    if(!recordsAgentMessageList.isEmpty)
+                    {
+                        logger.info("message received: "+ recordsAgentMessageList)
+                        receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
+                    }
 
                     consumers.filterNot(tuple => List("defaultStringConsumer", "defaultAgentMessageConsumer").contains(tuple._1)).foreach {
                         case (consumerName, consumer) => val recordsAgentMessageListNotDefault = consumer.poll(this.pollRate).iterator.asScala.toList
@@ -110,7 +116,9 @@ extends Agent[T](configuration)(
                             .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
                                 record => record.value
                             }
-                            receive(recordsAgentMessageListNotDefault, consumerName)
+
+                            if(!recordsAgentMessageListNotDefault.isEmpty)
+                                receive(recordsAgentMessageListNotDefault, consumerName)
                             consumer.commitAsync
 
                     }

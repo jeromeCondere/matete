@@ -31,10 +31,11 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
+    
 
 
     protected def initDefaultProducersProperties: Map[String, Properties] = {
-        logger.debug("Init default producers properties")
+        //logger.debug("Init default producers properties")
 
         val  propsAgentMessageProducer = new Properties()
         propsAgentMessageProducer.put("bootstrap.servers", brokers.mkString(","))
@@ -52,7 +53,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
  
 
     protected def initDefaultConsumersProperties: Map[String, Properties] = {
-        logger.debug("Init default consumers properties")
+        //logger.debug("Init default consumers properties")
 
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
@@ -73,7 +74,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
 
     protected def initProducersProperties: Map[String, Properties] = {
-        logger.debug("Init producers properties")
+        //logger.debug("Init producers properties")
 
         initDefaultProducersProperties ++ (configuration.producers match {
         
@@ -91,14 +92,14 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                         println("dfdrgr")
                         mapProp + (producerConfig.name ->  props)
                 }
-            case None => logger.debug("no additional producers")
+            case None => //logger.debug("no additional producers")
                 Map.empty[String, Properties]
 
         })
     }
 
     protected def initConsumerProperties: Map[String, Properties] = {
-        logger.debug("Init consumer properties")
+        //logger.debug("Init consumer properties")
 
         initDefaultConsumersProperties ++ (configuration.consumers match {
         
@@ -116,7 +117,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                         }
                         mapProp + (consumerConfig.name ->  props)
                 }
-            case None => logger.debug("no additional consumers")
+            case None => //logger.debug("no additional consumers")
                 Map.empty[String, Properties]
         })
     }
@@ -124,13 +125,11 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
     def propsForProducers: Map[String, Properties] =  initProducersProperties
     def propsForConsumers: Map[String, Properties] = initConsumerProperties
-    logger.info("props abstract 2 " + propsForProducers)
 
     // take only the agent message producers
     protected def producers: Map[String, KafkaProducer[String, AgentMessage[T]]] = propsForProducers.map{
         case (name,props) => (name, new KafkaProducer[String, AgentMessage[T]](props))
     }
-    logger.info("producers abstract " + this.producers)
 
     protected def agentMessageProducer = producers("defaultAgentMessageProducer")  
 

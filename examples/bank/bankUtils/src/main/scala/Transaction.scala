@@ -3,6 +3,11 @@ package com.matete.examples.bank.utils
 import org.apache.avro.Schema
 import scala.io.Source
 
+
+
+/*trait CustomToString {
+  override def toString() = s"Transaction()"
+}*/
 case class Transaction(
     label: Option[String],
     from: Option[String],

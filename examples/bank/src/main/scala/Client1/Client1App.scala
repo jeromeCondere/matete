@@ -55,15 +55,14 @@ object Client1App extends App {
     }
 
     logger.info("start running client1 agent")
-    val client1 = new Client1(List(broker), AgentId("myBank"))
+    val client1 = new Client1(List(broker), AgentId("Bank"))
 
     client1.run
 
 }
 
-class Client1(brokers: List[String], bankAgentId: AgentId) extends Client(brokers, AgentId("Client1"), bankAgentId)(145, "client_account1"){
+class Client1(brokers: List[String], bankAgentId: AgentId) extends Client(brokers, AgentId("Client1"), bankAgentId)(145, "Client1_account"){
    override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
-        logger.info(moneyOnme)
 
         agentMessages.filter(_.message.typeTransaction == "deposit").map(_.message).foreach(
             transaction => {
@@ -71,6 +70,7 @@ class Client1(brokers: List[String], bankAgentId: AgentId) extends Client(broker
                 if(transaction.label == Some("deposit accepted")){
                     this.moneyOnme = this.moneyOnme - amount
                     logger.info(s"Put deposit $amount on my account, let's goo")
+                    logger.info("money " + moneyOnme)
                 }
             }
         )
@@ -81,6 +81,7 @@ class Client1(brokers: List[String], bankAgentId: AgentId) extends Client(broker
                 if(transaction.label == Some("withdrawal accepted")){
                     this.moneyOnme = this.moneyOnme + amount
                     logger.info(s"The withdrawal of $amount has been accepted for my account, hmmm")
+                        logger.info("money " + moneyOnme)
                 }
             }
         )
@@ -88,6 +89,7 @@ class Client1(brokers: List[String], bankAgentId: AgentId) extends Client(broker
        override def run = {
         init
         logger.info(s"Start polling loop")
+        logger.info("initial money " + moneyOnme)
         withdrawal(5)
         Thread.sleep(2000)
         withdrawal(34)
