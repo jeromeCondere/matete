@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matete-ping-pong.fullname" . }}
+  labels:
+    {{- include "matete-ping-pong.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "matete-ping-pong.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "matete-ping-pong.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "matete-ping-pong.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ include "matete-ping-pong-ping.container" .  }}
+        env:
+        - name: BROKER
+          value: {{ include "matete-ping-pong.brokerName" .  | quote }}
+        - name: JAVA_OPTS
+          value: '-XX:-UseContainerSupport'
+        securityContext:
+          {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+        image: "{{ .Values.ping.image.repository }}:{{ .Values.ping.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.ping.image.pullPolicy }}
+        ports:
+        - containerPort: {{ include "matete-ping-pong.container.port" . }}
+          protocol: TCP
+          name: {{ .Values.mateteClientPortName }}
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.mateteClientPortName }}
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.mateteClientPortName }}
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      - name: {{ include "matete-ping-pong-pong.container" . }}
+        env:
+        - name: BROKER
+          value: {{ include "matete-ping-pong.brokerName" .  | quote }} # add kafka service name
+        - name: JAVA_OPTS
+          value: '-XX:-UseContainerSupport'
+        securityContext:
+          {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+        image: "{{ .Values.pong.image.repository }}:{{ .Values.pong.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.pong.image.pullPolicy }}
+        ports:
+        - containerPort: {{ include "matete-ping-pong.container.port" . }}
+          protocol: TCP
+          name: {{ .Values.mateteClientPortName }}
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.mateteClientPortName }}
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.mateteClientPortName }}
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

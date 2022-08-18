@@ -63,8 +63,8 @@ object Client2App extends App {
 class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(brokers, AgentId("Client2"), bankAgentId)(234, "Client2_account") with Runnable{
     override def pollRate: Duration = Duration.ofMillis(100)
 
-
-   override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
+    override def receive(agentMessages: List[AgentMessage[Transaction]], consumerName: String) = {
+        logger.info("AYO "+ agentMessages)
 
         agentMessages.filter(_.message.typeTransaction == "deposit").map(_.message).foreach(
             transaction => {
@@ -93,10 +93,16 @@ class Client2(brokers: List[String], bankAgentId: AgentId) extends Client(broker
         init
         logger.info(s"Start polling loop")
         logger.info("initial money " + moneyOnme)
+        logger.info("withdrawal of 5")
         withdrawal(5)
         Thread.sleep(2000)
+        
+        logger.info("withdrawal of 34")
         withdrawal(34)
+        
         Thread.sleep(1000)
+        logger.info("withdrawal of 245")
+
         withdrawal(245)
         deposit(100, "blabla")
         deposit(45.6, "rent")

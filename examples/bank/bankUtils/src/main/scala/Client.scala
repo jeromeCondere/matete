@@ -21,7 +21,7 @@ trait  ClientLike {
 
 }
 
-abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: AgentId)( var moneyOnme: Double, val accountId: String) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = agentId))(null,"http://localhost:8081") 
+abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: AgentId)( var moneyOnme: Double, val accountId: String) extends AvroAgent[Transaction](defaultConfig(brokers = brokers, agentId = agentId))(null, "http://localhost:8081") 
     with ClientLike {
 
     val schema = Transaction.initSchema 
@@ -69,8 +69,9 @@ abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: Agen
         val messageSchema = schema.getField("message").schema()
 
 
-        val agentIdRecord = new GenericData.Record(schema.getField("agentId").schema())
-        val messageRecord = new GenericData.Record(schema.getField("message").schema())
+        val agentIdRecord = new GenericData.Record(agentIdSchema)
+        val messageRecord = new GenericData.Record(messageSchema)
+
 
         agentIdRecord.put("id", this.agentId.id)
         messageRecord.put("label",message.label.getOrElse(null))
@@ -84,10 +85,12 @@ abstract class Client(brokers: List[String], agentId: AgentId, bankAgentId: Agen
         val parser = new Schema.Parser()
         avroRecord.put("agentId", agentIdRecord)
         avroRecord.put("message", messageRecord)
+        logger.info(s"to avro: $avroRecord")
         avroRecord
    }
 
    override def avroToMessage(record: GenericRecord) = {
+        logger.info("ay patek")
         val agentIdRecord = record.get("agentId").asInstanceOf[GenericRecord]
         val messageRecord = record.get("message").asInstanceOf[GenericRecord]
 

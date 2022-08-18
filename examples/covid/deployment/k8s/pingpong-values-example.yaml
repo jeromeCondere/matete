@@ -1,0 +1,42 @@
+kafka:
+  persistence:
+    storageClass: my-local-storage-class # change to fit your need
+    accessModes: ["ReadWriteMany"] # change to fit your need
+    size: 2Gi
+
+
+  global:
+    storageClass: my-local-storage-class # change to fit your need
+
+  containerSecurityContext:
+    runAsUser: 1000 #k8 user
+    runAsNonRoot: true
+
+  podSecurityContext:
+    fsGroup: 1000 #k8 group
+  zookeeper:
+    persistence:
+      storageClass: my-local-storage-class # change to fit your need
+      accessModes: ["ReadWriteMany"] # change to fit your need
+      size: 503Mi
+    containerSecurityContext:
+      runAsUser: 1000
+    podSecurityContext: 
+      fsGroup: 1000
+
+
+
+
+# ping:
+#   image:
+#     pullPolicy: Always
+# pong:
+#   image:
+#     pullPolicy: Always
+
+resources: 
+  limits:
+    memory: "1Gi"
+  requests:
+    memory: "600Mi"
+

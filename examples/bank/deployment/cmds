@@ -6,9 +6,12 @@ docker run -d -p 8081:8081 --add-host=host.docker.internal:host-gateway -e \
     -e SCHEMA_REGISTRY_DEBUG=true confluentinc/cp-schema-registry
 
 
+
+
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic Bank-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic Client1-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic Client2-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --list
 
 
 kafka-console-consumer.sh --topic Bank-topic --from-beginning --bootstrap-server localhost:9092

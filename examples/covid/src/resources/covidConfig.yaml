@@ -1,0 +1,34 @@
+models:
+  - name: france
+    pTravel: 0.3
+    initialPeople: 101
+    infectionChance:  13
+    recoveryChance:  3
+    averageRecoveryTime:  50
+    frontiers:
+      - countryId: uk
+        pTransmission: 0.1
+      - countryId: falconia
+        pTransmission: 0.8
+      - countryId: uk
+        pTransmission: 0.1
+  - name: falconia
+    pTravel: 0.1
+    initialPeople: 345
+    infectionChance:  12
+    recoveryChance:  3
+    averageRecoveryTime:  89
+    frontiers:
+      - countryId: uk
+        pTransmission: 0.5
+      - countryId: falconia
+        pTransmission: 0.5
+  - name: uk
+    pTravel: 0.2
+    initialPeople: 300
+    infectionChance:  30
+    recoveryChance:  60
+    averageRecoveryTime:  110
+    frontiers:
+      - countryId: france
+        pTransmission: 1

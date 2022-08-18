@@ -1,20 +1,20 @@
 {
   "type" : "record",
   "namespace" : "DataFlair",
-  "name" : "not",
+  "name" : "agentMessage",
   "fields" : [
       {
         "name": "agentId",
         "type":{
           "type": "record",
-          "name": "agentid",
+          "name": "agentid_record",
           "fields" : [
             {"name": "id", "type": "string"}
           ]
         }
       },
       { "name" : "message" , "type" : {
-            "name": "my_message",
+            "name": "message_record",
             "type": "record",
             "fields" : [
               {"name": "label", "type": ["null", "string"]},

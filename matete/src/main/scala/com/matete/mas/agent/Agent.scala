@@ -15,9 +15,6 @@ class Agent[T](configuration: AgentConfig)
 extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
     //polling rate
     def pollRate: Duration = Duration.ofMillis(1000)
-      /***
-       * I 
-       ***/
     logger.info("agent started")
     logger.debug(s"Brokers - ${brokers.mkString(", ")}")
     

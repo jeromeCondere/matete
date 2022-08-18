@@ -89,7 +89,6 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                             case Parameter(k,v) => props.put(k,v)
                         
                         }
-                        println("dfdrgr")
                         mapProp + (producerConfig.name ->  props)
                 }
             case None => //logger.debug("no additional producers")
@@ -135,11 +134,12 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
 
     // take only the agent message consumers
-    protected def consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
+    protected val consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.map{
         case (name,props) => (name, new KafkaConsumer[String, AgentMessage[T]](props) )
     }
     protected def agentMessageConsumer = consumers("defaultAgentMessageConsumer")
-
+    
+    agentMessageConsumer.subscribe(util.Collections.singletonList(TOPIC))
 
     // subscribe to the agent topic
     consumers.foreach{
@@ -154,7 +154,7 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
 
     override def join(agentIds: List[AgentId]) = {
         this.agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
-    }  
+    }
 
     /***
      * send message to agentIdReceiver
@@ -164,7 +164,8 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
      ***/
     override  def send(agentIdReceiver: AgentId, message: T, producer: String = "defaultAgentMessageProducer") = {
         // get topic from receiver and then  send it
-        logger.debug(s"Sending message to ${agentIdReceiver.id}")
+        //TODO:
+        //logger.debug(s"Sending message to ${agentIdReceiver.id}")
         val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", AgentMessage(this.agentId, message))
         this.producers(producer).send(record)
     }

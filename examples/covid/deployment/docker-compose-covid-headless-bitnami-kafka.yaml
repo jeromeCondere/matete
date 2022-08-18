@@ -1,0 +1,66 @@
+version: "3.3"
+services: 
+  zookeeper:
+    image: 'bitnami/zookeeper'
+    container_name: zookeeper_server
+    ports:
+      - '12181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka-app-tier
+
+
+  kafka:
+    image: 'bitnami/kafka'
+    container_name: kafka_server
+    ports:
+      - '19092:9092'
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+
+    networks:
+      - kafka-app-tier
+
+
+  postgres:
+    image: 'postgres'
+    container_name: 'postgres_db'
+    ports:
+      - '15432:5432'
+    environment:
+      - POSTGRES_USER=postgres 
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=db
+      - POSTGRES_HOST_AUTH_METHOD=md5
+    networks:
+      - postgres-app-tier
+
+
+  covid: 
+    build: ./Covid-headless
+    container_name: covid_experiment
+    environment:
+      - BROKER=kafka:9092 
+      - POSTGRES_HOST=postgres:5432
+
+    networks:
+      - kafka-app-tier
+      - postgres-app-tier
+    depends_on:
+      - kafka
+      - postgres
+
+
+networks:
+  kafka-app-tier:
+    driver: bridge
+  postgres-app-tier:
+    driver: bridge

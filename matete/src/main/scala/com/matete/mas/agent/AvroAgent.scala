@@ -44,13 +44,13 @@ extends Agent[T](configuration)(
         val  propsConsumerAgentMessage = new Properties()
         propsConsumerAgentMessage.put("bootstrap.servers", brokers.mkString(","))
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-classic")
-        propsConsumerAgentMessage.put("enable.auto.commit", "false")
   
         propsConsumerAgentMessage.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
         propsConsumerAgentMessage.put("value.deserializer", "io.confluent.kafka.serializers.KafkaAvroDeserializer")
         propsConsumerAgentMessage.put("group.id", getTopicGroupBase(agentId)+"-agent")
         propsConsumerAgentMessage.put("enable.auto.commit", "false")
         propsConsumerAgentMessage.put("schema.registry.url", schemaRegistryUrl)
+        propsConsumerAgentMessage.put("specific.avro.reader", "true")
 
         //logger.debug("init consumers properties avro")
         Map("defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
@@ -67,7 +67,7 @@ extends Agent[T](configuration)(
 
 
     // take only the agent message consumers
-    override protected def consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.filter(_._1 != "defaultAgentMessageConsumer")
+    override protected val consumers: Map[String, KafkaConsumer[String, AgentMessage[T]]] = propsForConsumers.filter(_._1 != "defaultAgentMessageConsumer")
     .map{
         case (name,props) => (name, new KafkaConsumer[String, AgentMessage[T]](props) )
     }
@@ -95,7 +95,15 @@ extends Agent[T](configuration)(
                 while(wantToDie == false){
 
 
-                    val recordsAgentMessageList = agentAvroMessageConsumer.poll(this.pollRate).iterator.asScala.toList
+                    val recordsAgentMessageListPolled = agentAvroMessageConsumer.poll(this.pollRate).iterator.asScala.toList
+
+                    if(!recordsAgentMessageListPolled.isEmpty)
+                    {
+                        logger.info("message received: "+ recordsAgentMessageListPolled)
+                        
+                    }
+                    
+                    val recordsAgentMessageList = recordsAgentMessageListPolled
                     .filter(_.key!=null)
                     .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
                         record =>  record.value
