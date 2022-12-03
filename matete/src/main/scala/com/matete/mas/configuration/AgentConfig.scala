@@ -1,5 +1,5 @@
 package com.matete.mas.configuration
-import  com.matete.mas.agent.AgentId
+import com.matete.mas.agent.AgentId
 
 case class Parameter(key: String, value: String)
 
@@ -9,14 +9,15 @@ case class AgentConfig(
     brokers: List[String],
     producers: Option[List[ProducerConfig]],
     consumers: Option[List[ConsumerConfig]]
-
 )
-  
+
 case class ProducerConfig(
     name: String,
     description: Option[String] = None,
-    keySerializer: String =  "org.apache.kafka.common.serialization.StringSerializer",
-    valueSerializer: String = "com.matete.mas.serialization.AgentMessageStringSerializer",
+    keySerializer: String =
+      "org.apache.kafka.common.serialization.StringSerializer",
+    valueSerializer: String =
+      "com.matete.mas.serialization.AgentMessageStringSerializer",
     compressionType: String = "snappy",
     schemaRegistryUrl: Option[String] = None,
     additionalParameters: Option[List[Parameter]] = None
@@ -25,18 +26,23 @@ case class ProducerConfig(
 case class ConsumerConfig(
     name: String,
     description: Option[String] = None,
-    keyDeserializer: String =  "org.apache.kafka.common.serialization.StringDeserializer",
-    valueDeserializer: String = "com.matete.mas.deserialization.AgentMessageStringDeserializer",
+    keyDeserializer: String =
+      "org.apache.kafka.common.serialization.StringDeserializer",
+    valueDeserializer: String =
+      "com.matete.mas.deserialization.AgentMessageStringDeserializer",
     autoCommit: String = "false",
     groupId: String,
     additionalParameters: Option[List[Parameter]]
 )
 
-object DefaultConfig  {
-    def defaultConfig (agentId: AgentId, brokers: List[String]) = {
-        AgentConfig(
-                description = None, id = agentId.id, brokers =  brokers, 
-                producers = None, consumers = None
-             )
-    }
+object DefaultConfig {
+  def defaultConfig(agentId: AgentId, brokers: List[String]) = {
+    AgentConfig(
+      description = None,
+      id = agentId.id,
+      brokers = brokers,
+      producers = None,
+      consumers = None
+    )
+  }
 }

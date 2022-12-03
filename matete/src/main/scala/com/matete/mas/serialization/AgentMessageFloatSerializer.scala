@@ -6,13 +6,16 @@ import org.apache.kafka.common.serialization.Serializer
 import com.matete.mas.agent.AgentMessage
 
 /**
- *  Agent message float serializer
+  *  Agent message float serializer
  **/
-class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]]{
+class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]] {
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
-  override def serialize(topic:String, data: AgentMessage[Float]):Array[Byte] = {
+  override def serialize(
+      topic: String,
+      data: AgentMessage[Float]
+  ): Array[Byte] = {
     try {
       val byteOut = new ByteArrayOutputStream()
       val objOut = new ObjectOutputStream(byteOut)
@@ -20,15 +23,11 @@ class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]]{
       objOut.close()
       byteOut.close()
       byteOut.toByteArray
-    }
-    catch {
+    } catch {
       case ex: Exception => throw new Exception(ex.getMessage)
     }
   }
 
-  override def close():Unit = {
-
-  }
-
+  override def close(): Unit = {}
 
 }

@@ -10,7 +10,6 @@ import org.apache.kafka.common.errors.WakeupException
 import com.matete.mas.configuration.AgentConfig
 import com.matete.mas.configuration.DefaultConfig.defaultConfig
 
-
 /** Agent class
   *
   * An agent is a component using kafka stream to communicate with other agent
@@ -21,108 +20,137 @@ import com.matete.mas.configuration.DefaultConfig.defaultConfig
   * @param defaultSerializer serializer used to send the message of type T.
   * @param defaultDeserializer serializer used to receive the message of type T.
   */
-class Agent[T](configuration: AgentConfig)
-( protected val defaultSerializer: Option[String] = None, protected val defaultDeserializer: Option[String] = None) 
-extends AbstractAgent[T](configuration)(defaultSerializer, defaultDeserializer){
+class Agent[T](configuration: AgentConfig)(
+    protected val defaultSerializer: Option[String] = None,
+    protected val defaultDeserializer: Option[String] = None
+) extends AbstractAgent[T](configuration)(
+      defaultSerializer,
+      defaultDeserializer
+    ) {
 
-    /**polling rate */
-    def pollRate: Duration = Duration.ofMillis(100)
+  /**polling rate */
+  def pollRate: Duration = Duration.ofMillis(100)
 
-    logger.info("Agent started")
-    logger.debug(s"Brokers - ${brokers.mkString(", ")}")
-    
-    class PollingLoopThread extends Runnable {
-        override def run(): Unit = pollingLoop
-    } 
+  logger.info("Agent started")
+  logger.debug(s"Brokers - ${brokers.mkString(", ")}")
 
-    // TODO: remove
-    override def disconnect(agentId: AgentId): Unit = {}
+  class PollingLoopThread extends Runnable {
+    override def run(): Unit = pollingLoop
+  }
 
-    /**
-     * receive method to process incoming agent messages
-     * @param agentMessages ordered list of agent messages (from most recent to less recent)
-     * @param consumerName name of the consumer that process the list of message
+  // TODO: remove
+  override def disconnect(agentId: AgentId): Unit = {}
+
+  /**
+    * receive method to process incoming agent messages
+    * @param agentMessages ordered list of agent messages (from most recent to less recent)
+    * @param consumerName name of the consumer that process the list of message
      **/
-    override def receive(agentMessages: List[AgentMessage[T]], consumerName: String = "defaultAgentMessageConsumer" ) = {}
+  override def receive(
+      agentMessages: List[AgentMessage[T]],
+      consumerName: String = "defaultAgentMessageConsumer"
+  ) = {}
 
-    /**
-     * receive method to process incoming string messages
-     * @param agentMessages ordered list of string messages (from most recent to less recent)
+  /**
+    * receive method to process incoming string messages
+    * @param agentMessages ordered list of string messages (from most recent to less recent)
      **/
-    override def receiveSimpleMessages(agentMessages: List[String]) = {}
+  override def receiveSimpleMessages(agentMessages: List[String]) = {}
 
-    override def forcedie: Unit = {}
-    override def init: Unit = {}
+  override def forcedie: Unit = {}
+  override def init: Unit = {}
 
-    /**
-     * Loop used to process the incoming messages
-     * 
+  /**
+    * Loop used to process the incoming messages
+    *
      **/
-    override def pollingLoop: Unit = {
-        try{
-                while(wantToDie == false){
+  override def pollingLoop: Unit = {
+    try {
+      while (wantToDie == false) {
 
+        val recordsAgentMessageList = agentMessageConsumer
+          .poll(this.pollRate)
+          .iterator
+          .asScala
+          .toList
+          .filter(_.key != null)
+          .filterNot(_.key.endsWith(this.stringKeySuffix))
+          .map { record =>
+            record.value
+          }
+        if (!recordsAgentMessageList.isEmpty)
+          receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
 
-                    val recordsAgentMessageList = agentMessageConsumer.poll(this.pollRate).iterator.asScala.toList
-                    .filter(_.key!=null)
-                    .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
-                        record =>  record.value
-                    }
-                    if(!recordsAgentMessageList.isEmpty)
-                        receive(recordsAgentMessageList, "defaultAgentMessageConsumer")
+        consumers
+          .filterNot(
+            tuple =>
+              List("defaultStringConsumer", "defaultAgentMessageConsumer")
+                .contains(tuple._1)
+          )
+          .foreach {
+            case (consumerName, consumer) =>
+              val recordsAgentMessageListNotDefault = consumer
+                .poll(this.pollRate)
+                .iterator
+                .asScala
+                .toList
+                .filter(_.key != null)
+                .filterNot(_.key.endsWith(this.stringKeySuffix))
+                .map { record =>
+                  record.value
+                }
+              if (!recordsAgentMessageListNotDefault.isEmpty)
+                receive(recordsAgentMessageListNotDefault, consumerName)
+              consumer.commitAsync
 
-                    consumers.filterNot(tuple => List("defaultStringConsumer", "defaultAgentMessageConsumer").contains(tuple._1)).foreach {
-                        case (consumerName, consumer) => val recordsAgentMessageListNotDefault = consumer.poll(this.pollRate).iterator.asScala.toList
-                            .filter(_.key!=null)
-                            .filterNot(_.key.endsWith(this.stringKeySuffix)).map{
-                                record => record.value
-                            }
-                            if(!recordsAgentMessageListNotDefault.isEmpty)
-                                receive(recordsAgentMessageListNotDefault, consumerName)
-                            consumer.commitAsync
+          }
+        agentMessageConsumer.commitAsync
 
-                    }
-                    agentMessageConsumer.commitAsync
-                    
-                } 
-            } catch {
-                case  e: WakeupException => logger.info("Wakeup exception")
-                
-            } finally {
-                die
-            }
+      }
+    } catch {
+      case e: WakeupException => logger.info("Wakeup exception")
+
+    } finally {
+      die
     }
+  }
 
-    override def run = {
-        init
-        logger.info(s"Start polling loop")
-        pollingLoop
-        logger.info(s"the polling loop is running in the thread")
+  override def run = {
+    init
+    logger.info(s"Start polling loop")
+    pollingLoop
+    logger.info(s"the polling loop is running in the thread")
 
-    }
+  }
 
-    /**
-     * Terminates polling loop
+  /**
+    * Terminates polling loop
      **/
-    def suicide = { this.wantToDie = true}
+  def suicide = { this.wantToDie = true }
 
-    def this(agentId: AgentId, brokers: List[String])( serializer: Option[String], deserializer: Option[String]) = {
-        this( 
-            defaultConfig(brokers = brokers, agentId = agentId)
-        )(serializer, deserializer)
-    }
+  def this(
+      agentId: AgentId,
+      brokers: List[String]
+  )(serializer: Option[String], deserializer: Option[String]) = {
+    this(
+      defaultConfig(brokers = brokers, agentId = agentId)
+    )(serializer, deserializer)
+  }
 }
 
 object Agent {
-    def apply[T](agentId: AgentId, brokers: List[String])
-        ( serializer: Option[String] = None, deserializer: Option[String] = None): Agent[T] = {
-        new  Agent[T](agentId, brokers)(serializer, deserializer)
-    }    
-    def apply[T](config :AgentConfig)
-        ( serializer: Option[String] , deserializer: Option[String] ): Agent[T] = {
-        new  Agent[T](config)(serializer, deserializer)
-    }
-    def apply[T](agentId: AgentId, brokers: List[String]): Agent[T] = {
-        new  Agent[T](agentId, brokers)(None, None)
-    }
+  def apply[T](agentId: AgentId, brokers: List[String])(
+      serializer: Option[String] = None,
+      deserializer: Option[String] = None
+  ): Agent[T] = {
+    new Agent[T](agentId, brokers)(serializer, deserializer)
+  }
+  def apply[T](
+      config: AgentConfig
+  )(serializer: Option[String], deserializer: Option[String]): Agent[T] = {
+    new Agent[T](config)(serializer, deserializer)
+  }
+  def apply[T](agentId: AgentId, brokers: List[String]): Agent[T] = {
+    new Agent[T](agentId, brokers)(None, None)
+  }
 }

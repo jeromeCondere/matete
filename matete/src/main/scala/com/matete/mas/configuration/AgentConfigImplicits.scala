@@ -8,21 +8,27 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto
 
 object AgentConfigImplicits {
-    implicit val customConfig: Configuration = Configuration.default.withDefaults
+  implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-    // encoder
+  // encoder
 
-    implicit val encoderAgentConfig: Encoder[AgentConfig] =  deriveEncoder[AgentConfig]
-    implicit val encoderConsumerConfig: Encoder[ConsumerConfig] = deriveEncoder[ConsumerConfig]
-    implicit val encoderProducerConfig: Encoder[ProducerConfig] =  deriveEncoder[ProducerConfig]
-    implicit val encoderParameter: Encoder[Parameter] = deriveEncoder[Parameter]
+  implicit val encoderAgentConfig: Encoder[AgentConfig] =
+    deriveEncoder[AgentConfig]
+  implicit val encoderConsumerConfig: Encoder[ConsumerConfig] =
+    deriveEncoder[ConsumerConfig]
+  implicit val encoderProducerConfig: Encoder[ProducerConfig] =
+    deriveEncoder[ProducerConfig]
+  implicit val encoderParameter: Encoder[Parameter] = deriveEncoder[Parameter]
 
+  // decoder
 
-    // decoder
-
-    implicit val decoderAgentConfig: Decoder[AgentConfig] = semiauto.deriveConfiguredDecoder[AgentConfig]
-    implicit val decoderConsumerConfig: Decoder[ConsumerConfig] = semiauto.deriveConfiguredDecoder[ConsumerConfig]
-    implicit val decoderProducerConfig: Decoder[ProducerConfig] = semiauto.deriveConfiguredDecoder[ProducerConfig]
-    implicit val decoderParameter: Decoder[Parameter] = semiauto.deriveConfiguredDecoder[Parameter]
+  implicit val decoderAgentConfig: Decoder[AgentConfig] =
+    semiauto.deriveConfiguredDecoder[AgentConfig]
+  implicit val decoderConsumerConfig: Decoder[ConsumerConfig] =
+    semiauto.deriveConfiguredDecoder[ConsumerConfig]
+  implicit val decoderProducerConfig: Decoder[ProducerConfig] =
+    semiauto.deriveConfiguredDecoder[ProducerConfig]
+  implicit val decoderParameter: Decoder[Parameter] =
+    semiauto.deriveConfiguredDecoder[Parameter]
 
 }
