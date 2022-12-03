@@ -1,7 +1,5 @@
 package com.matete.mas.agent
 
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericRecord
 
 trait AvroLike[T] {

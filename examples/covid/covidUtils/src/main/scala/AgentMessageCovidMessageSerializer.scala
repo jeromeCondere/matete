@@ -12,10 +12,7 @@ import java.nio.charset.StandardCharsets
 
 class AgentMessageCovidMessageSerializer extends Serializer[AgentMessage[CovidMessage]]{
 
-  override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
-
-  }
-
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
   override def serialize(topic:String, data: AgentMessage[CovidMessage]):Array[Byte] = {
     try {

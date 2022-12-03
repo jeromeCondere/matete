@@ -1,10 +1,9 @@
 package com.matete.mas.agent
 
-import scala.util.Try
 import java.util.Properties
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
-import  java.util
+import java.util
 import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
 import com.matete.mas.configuration._
@@ -14,26 +13,32 @@ case class AgentId(id: String)
 
 /**
   * 
-  *
   * @param configuration agent configuration
-  * @param defaultSerializer agent message serializer
-  * @param defaultDeserializer agent message deserializer
+  * @param defaultSerializer serializer used to send the message of type T.
+  * @param defaultDeserializer serializer used to receive the message of type T.
   * 
-  * @todo change to H <: AgentConfig
   */ 
 abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None) extends AgentLike[T] {
 
     val agentId: AgentId = AgentId(configuration.id)
     val brokers = configuration.brokers
+
     def GENERAL_POOL: String = "GENERAL_AGENT_POOL"
+    /**
+     * TOPIC = agentId + "-topic"
+     **/
     def TOPIC: String = getTopic(AgentId(configuration.id))
+
     val description = configuration.description
     protected var wantToDie: Boolean = false
     protected val stringKeySuffix = "-str"
     final val logger = LogManager.getLogger(s"Agent - ${agentId.id}")
     
 
-
+    //TODO: add additional parameters for default consumers
+    /**
+     * Init default producer
+     **/
     protected def initDefaultProducersProperties: Map[String, Properties] = {
         //logger.debug("Init default producers properties")
 
@@ -50,8 +55,11 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         Map("defaultAgentMessageProducer" -> propsAgentMessageProducer)
     }
 
+    //TODO: add additional parameters for default consumers
  
-
+    /**
+     * Init default consumer
+     **/
     protected def initDefaultConsumersProperties: Map[String, Properties] = {
         //logger.debug("Init default consumers properties")
 
@@ -72,7 +80,9 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         Map("defaultAgentMessageConsumer" -> propsConsumerAgentMessage)
     } 
 
-
+    /**
+     * Init secondary producers
+     **/
     protected def initProducersProperties: Map[String, Properties] = {
         //logger.debug("Init producers properties")
 
@@ -87,7 +97,6 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
                         props.put("compression.type", producerConfig.compressionType)
                         producerConfig.additionalParameters.toList.flatten.foreach{
                             case Parameter(k,v) => props.put(k,v)
-                        
                         }
                         mapProp + (producerConfig.name ->  props)
                 }
@@ -97,6 +106,9 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
         })
     }
 
+    /**
+     * Init secondary consumers
+     **/
     protected def initConsumerProperties: Map[String, Properties] = {
         //logger.debug("Init consumer properties")
 
@@ -147,39 +159,42 @@ abstract class AbstractAgent[T](configuration: AgentConfig)( defaultSerializer: 
     }
 
 
+    // TODO: keep?
     override def join(agentId: AgentId) = {
         this.agentMessageConsumer.subscribe(util.Collections.singletonList(getTopic(agentId)))
     
     } 
 
+    // TODO: keep?
     override def join(agentIds: List[AgentId]) = {
         this.agentMessageConsumer.subscribe(agentIds.map(getTopic).asJava)
     }
 
-    /***
+    /**
      * send message to agentIdReceiver
      *  @param agentIdReceiver  agent that the message is sent to
      *  @param message message sent to agentIdReceiver
      * 
-     ***/
+     **/
     override  def send(agentIdReceiver: AgentId, message: T, producer: String = "defaultAgentMessageProducer") = {
-        // get topic from receiver and then  send it
-        //TODO:
-        //logger.debug(s"Sending message to ${agentIdReceiver.id}")
+
+        logger.debug(s"Sending message to ${agentIdReceiver.id}")
         val record = new ProducerRecord(getTopic(agentIdReceiver), s"${agentIdReceiver.id}", AgentMessage(this.agentId, message))
         this.producers(producer).send(record)
     }
 
 
-    /***
+    /**
      * close all the consumers and producers
-     ***/
+     **/
     override def die: Unit = {
-        
+      logger.info("Agent dying now!")  
+
       this.consumers.foreach{ case(_, kafkaConsumer) => kafkaConsumer.close }
       this.producers.foreach{ case(_, kafkaProducer) => kafkaProducer.close }
 
     }
+
 
     def forcedie: Unit = this.wantToDie = true
 

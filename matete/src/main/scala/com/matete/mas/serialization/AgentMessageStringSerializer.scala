@@ -5,12 +5,12 @@ import java.util
 import org.apache.kafka.common.serialization.Serializer
 import com.matete.mas.agent.AgentMessage
 
+/**
+ *  Agent message string serializer
+ **/
 class AgentMessageStringSerializer extends Serializer[AgentMessage[String]]{
 
-  override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
-
-  }
-
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
   override def serialize(topic:String, data: AgentMessage[String]):Array[Byte] = {
     try {

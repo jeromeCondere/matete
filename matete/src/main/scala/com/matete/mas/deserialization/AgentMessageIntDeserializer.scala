@@ -5,11 +5,13 @@ import java.util
 import org.apache.kafka.common.serialization.Deserializer
 import com.matete.mas.agent.AgentMessage
 
+/**
+ *  Agent message int deserializer
+ **/
 class AgentMessageIntDeserializer extends Deserializer[AgentMessage[Int]]{
 
-  override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}  
 
-  }
   override def deserialize(topic:String,bytes: Array[Byte]) = {
     val byteIn = new ByteArrayInputStream(bytes)
     val objIn = new ObjectInputStream(byteIn)

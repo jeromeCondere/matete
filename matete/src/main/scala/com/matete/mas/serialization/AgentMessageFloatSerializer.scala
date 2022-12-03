@@ -5,12 +5,12 @@ import java.util
 import org.apache.kafka.common.serialization.Serializer
 import com.matete.mas.agent.AgentMessage
 
+/**
+ *  Agent message float serializer
+ **/
 class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]]{
 
-  override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
-
-  }
-
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
   override def serialize(topic:String, data: AgentMessage[Float]):Array[Byte] = {
     try {
@@ -22,7 +22,7 @@ class AgentMessageFloatSerializer extends Serializer[AgentMessage[Float]]{
       byteOut.toByteArray
     }
     catch {
-      case ex:Exception => throw new Exception(ex.getMessage)
+      case ex: Exception => throw new Exception(ex.getMessage)
     }
   }
 

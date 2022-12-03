@@ -1,4 +1,6 @@
+# Covid example
 
+Runs a covid simulation
 ### Run with local kafka
 docker-compose -f docker-compose-ping-pong_local-kafka.yaml  up
 

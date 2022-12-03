@@ -5,7 +5,7 @@ import com.matete.mas.agent.AgentId
 import java.util.Properties
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
-import  java.util
+import java.util
 import io.circe.yaml.parser
 import java.io.InputStreamReader
 import com.matete.mas.configuration.AgentConfig

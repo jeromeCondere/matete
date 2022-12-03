@@ -13,15 +13,17 @@ import org.nlogo.core._
 
 
 /**
- * A class used to create a classic netlogoAgent that run the model .nlogo file
+ * A class used to create a classic headless netlogoAgent that run the model .nlogo file
  * 
- * @constructor 
+ * @constructor Create an netlogo agent that can only send and receive messages of type T 
+ * @param configuration agent config - contains agent id, consumers and producers config
+ * @param defaultSerializer serializer used to send the message of type T.
+ * @param defaultDeserializer serializer used to receive the message of type T.
  * @param netlogoModel the model used to run the agent
  */
 abstract class NetlogoHeadlessAgent[T](configuration: AgentConfig)( defaultSerializer: Option[String] = None, defaultDeserializer: Option[String] = None)(netlogoModel: NetlogoModel) extends SimulationAgent[T](configuration)( defaultSerializer, defaultDeserializer) {
 
 
-    
     final protected val workspace = HeadlessWorkspace.newInstance
     var ticks: Double = 0
 

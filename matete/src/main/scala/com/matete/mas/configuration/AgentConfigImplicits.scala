@@ -1,5 +1,5 @@
 package com.matete.mas.configuration
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 import io.circe.generic.semiauto._
 import io.circe.syntax._

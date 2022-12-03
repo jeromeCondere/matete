@@ -12,9 +12,8 @@ import java.nio.charset.StandardCharsets
 
 class AgentMessageCovidMessageDeserializer extends Deserializer[AgentMessage[CovidMessage]]{
 
-  override def configure(configs: util.Map[String,_],isKey: Boolean):Unit = {
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}  
 
-  }
   override def deserialize(topic:String,bytes: Array[Byte]) = {
     (for {
           json <- parse(new String(bytes, StandardCharsets.UTF_8)): Either[Error, Json]

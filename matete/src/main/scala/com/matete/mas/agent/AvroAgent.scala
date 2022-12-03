@@ -3,19 +3,25 @@ package com.matete.mas.agent
 import java.util.Properties
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.clients.consumer._
-import  java.util
+import java.util
 import scala.collection.JavaConverters._
-import java.time.Duration
 import org.apache.kafka.common.errors.WakeupException
 import com.matete.mas.configuration.AgentConfig
-import com.matete.mas.configuration.DefaultConfig.defaultConfig
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericRecord
 
 
 
-
+/** AvroAgent class
+  *
+  * An  avro agent is an agent sending avro message
+  *
+  * @constructor Create an  avro agent that can only send and receive avro messages of type T
+  * @param configuration agent config - contains agent id, consumers and producers config
+  * @param schema schema of the avro message (should match AgentMessage[T])
+  * @param schemaRegistryUrl schema registry url
+  */
 abstract class AvroAgent[T](configuration: AgentConfig)(schema: Schema, schemaRegistryUrl: String)
 extends Agent[T](configuration)(
     defaultSerializer = None,
