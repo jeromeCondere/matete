@@ -34,8 +34,8 @@ object PingPongApp extends App{
 class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runnable {
     //pollRate = Duration.ofMillis(100)
     
-    override def receiveSimpleMessages(agentMessages: List[String]) = {
-        val e = agentMessages.filter(_ == "Pong") 
+    override def receive(agentMessages: List[AgentMessage[String]], consumerName: String = "defaultAgentMessageConsumer") = {
+        val e = agentMessages.filter(_.message == "Pong") 
         
         if(e.size>0){
             send(AgentId("Pong"), "Ping")
@@ -48,8 +48,8 @@ class Ping extends Agent(AgentId("Ping"), List("localhost:9092"))()() with  Runn
 }
 
 class Pong extends Agent(AgentId("Pong"), List("localhost:9092"))()() with Runnable{
-    override def receiveSimpleMessages(agentMessages: List[String]) = {
-        val e = agentMessages.filter(_ == "Ping")
+    override def receive(agentMessages: List[AgentMessage[String]], consumerName: String = "defaultAgentMessageConsumer") = {
+        val e = agentMessages.filter(_.message == "Ping")
         if(e.size>0){
             send(AgentId("Ping"), "Pong")
             logger.error(s"Ping received : ${e.size}, sending Pong")

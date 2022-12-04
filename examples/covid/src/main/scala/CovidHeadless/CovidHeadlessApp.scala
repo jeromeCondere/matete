@@ -89,7 +89,7 @@ object CovidHeadlessApp  extends App {
 
                 logger.info(s"setting up model ${model.name}")
                 setTopic(model.name)
-                val covid = new Covid(List(broker), AgentId(model.name), model, CovidModel.model(s"Covid ${model.name}"))
+                val covid = new Covid(List(broker), AgentId(model.name), model, CovidModel.model(s"Covid ${model.name}", modelPath))
                 logger.info(s"running model ${model.name}")
 
                 val covidThread = new Thread {
@@ -103,10 +103,12 @@ object CovidHeadlessApp  extends App {
         )
     )
 
-    
+
+}
+
 
     object CovidModel {
-        def model(title: String) = {
+        def model(title: String, modelPath: String) = {
             NetlogoModel(
                 src = modelPath,
                 maxTicks = 290,
@@ -260,6 +262,3 @@ object CovidHeadlessApp  extends App {
         }
 
     }
-
-}
-

@@ -50,5 +50,11 @@ java  -cp "netlogo-6.2.0.jar"  -jar CovidApp-0.1.0-SNAPSHOT_2.12.15.jar localhos
 
 
 
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic uk-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic france-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic ServerManager-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+
 
 docker stop $(docker ps -a -q)

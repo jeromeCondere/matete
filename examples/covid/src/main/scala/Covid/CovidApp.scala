@@ -88,7 +88,7 @@ object CovidApp  extends App {
 
                 logger.info(s"setting up model ${model.name}")
                 setTopic(model.name)
-                val covid = new Covid(List(broker), AgentId(model.name), model, CovidModel.model(s"Covid ${model.name}"))
+                val covid = new Covid(List(broker), AgentId(model.name), model, CovidModel.model(s"Covid ${model.name}", modelPath))
                 logger.info(s"running model ${model.name}")
 
                 val covidThread = new Thread {
@@ -102,169 +102,168 @@ object CovidApp  extends App {
         )
     )
 
-    
+}
 
-    object CovidModel {
-        def model(title: String) = {
-            NetlogoModel(
-                src = modelPath,
-                maxTicks = 290,
-                width = 1000,
-                height = 900,
-                title = Some(title)
-            )
-        }
+
+
+object CovidModel {
+    def model(title: String, modelPath: String) = {
+        NetlogoModel(
+            src = modelPath,
+            maxTicks = 100, //290
+            width = 1000,
+            height = 900,
+            title = Some(title)
+        )
     }
+}
 
 
 
-    class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConfig, netlogoModel: NetlogoModel) 
-        extends NetlogoAgent[CovidMessage](defaultConfig(brokers = brokers, agentId = agentId))(
-            Some("com.matete.examples.covid.AgentMessageCovidMessageSerializer"),
-            Some("com.matete.examples.covid.AgentMessageCovidMessageDeserializer")
-         )(netlogoModel) {
+class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConfig, netlogoModel: NetlogoModel) 
+    extends NetlogoAgent[CovidMessage](defaultConfig(brokers = brokers, agentId = agentId))(
+        Some("com.matete.examples.covid.AgentMessageCovidMessageSerializer"),
+        Some("com.matete.examples.covid.AgentMessageCovidMessageDeserializer")
+     )(netlogoModel) {
 
 
-        var only = 1
+    var only = 1
 
-        override def receive(agentMessages: List[AgentMessage[CovidMessage]], consumerName: String) = {
-            //reportAndCallback("initial-people", x => logger.info(s"initial-people $x"))
+    override def receive(agentMessages: List[AgentMessage[CovidMessage]], consumerName: String) = {
+        //reportAndCallback("initial-people", x => logger.info(s"initial-people $x"))
 
-            agentMessages.foreach( agentMessage => {
-                    cmdLater(s"set initial-people initial-people + ${agentMessage.message.turtles.get.size}")
+        agentMessages.foreach( agentMessage => {
+                cmdLater(s"set initial-people initial-people + ${agentMessage.message.turtles.get.size}")
 
-                    agentMessage.message.turtles.get.foreach( turtle =>
-                    createTurtle(turtle)
-                )
-            })
+                agentMessage.message.turtles.get.foreach( turtle =>
+                createTurtle(turtle)
+            )
+        })
+    }
+    
+    override def check = { 
+        ticks = ticks + 1
+        if(only == 1) {
+            reportAndCallback("initial-people", x => logger.info(s"initial-people $x"))
+            reportAndCallback("infection-chance", x => logger.info(s"infection-chance $x"))
+            reportAndCallback("recovery-chance", x => logger.info(s"recovery-chance $x"))
+            reportAndCallback("average-recovery-time", x => logger.info(s"average-recovery-time $x"))
+            reportAndCallback("p-travel", x => logger.info(s"p-travel $x"))
+            only = only + 1
         }
-        
-        override def check = { 
-            ticks = ticks + 1
-            if(only == 1) {
-                reportAndCallback("initial-people", x => logger.info(s"initial-people $x"))
-                reportAndCallback("infection-chance", x => logger.info(s"infection-chance $x"))
-                reportAndCallback("recovery-chance", x => logger.info(s"recovery-chance $x"))
-                reportAndCallback("average-recovery-time", x => logger.info(s"average-recovery-time $x"))
-                reportAndCallback("p-travel", x => logger.info(s"p-travel $x"))
-                only = only + 1
-            }
 
-            if(ticks % 25 == 0){
-                val  frontiers  =   modelConfig.frontiers          
+        if(ticks % 25 == 0){
+            val  frontiers  =   modelConfig.frontiers          
 
-                 reportAndCallback("turtles with [ ready-to-travel ]",
-                 x => {
-                    val turtles = x.asInstanceOf[ArrayAgentSet].agents.iterator.toList.map(_.asInstanceOf[org.nlogo.agent.Agent])
-                    logger.info("count travelers " + turtles.size)
+             reportAndCallback("turtles with [ ready-to-travel ]",
+             x => {
+                val turtles = x.asInstanceOf[ArrayAgentSet].agents.iterator.toList.map(_.asInstanceOf[org.nlogo.agent.Agent])
+                logger.info("count travelers " + turtles.size)
 
-                    val turtlesRandomized =  Random.shuffle(turtles)
+                val turtlesRandomized =  Random.shuffle(turtles)
 
 
 
-                    val zeroToTurtleSize = (0 to (turtlesRandomized.size -1)).to[ListBuffer]
-                    val elementsToTake = frontiers.map(frontier => (frontier.pTransmission * zeroToTurtleSize.size).round)
+                val zeroToTurtleSize = (0 to (turtlesRandomized.size -1)).to[ListBuffer]
+                val elementsToTake = frontiers.map(frontier => (frontier.pTransmission * zeroToTurtleSize.size).round)
 
-                    val indexes = (frontiers zip elementsToTake).foldLeft(List[(String,List[Int])]()){
-                        case(acc, (frontier, sizeToTake)) => 
-                            //logger.info(s"Partitionning frontier ${frontier.countryId} (${frontier.pTransmission}) taking ${sizeToTake} elements out of ${zeroToTurtleSize.size}")
+                val indexes = (frontiers zip elementsToTake).foldLeft(List[(String,List[Int])]()){
+                    case(acc, (frontier, sizeToTake)) => 
+                        //logger.info(s"Partitionning frontier ${frontier.countryId} (${frontier.pTransmission}) taking ${sizeToTake} elements out of ${zeroToTurtleSize.size}")
 
-                            val toRemove = zeroToTurtleSize.take(sizeToTake)
-                            val res = acc :+ (frontier.countryId, toRemove.toList)
-                            zeroToTurtleSize --= toRemove
-                            res
-                    }
+                        val toRemove = zeroToTurtleSize.take(sizeToTake)
+                        val res = acc :+ (frontier.countryId, toRemove.toList)
+                        zeroToTurtleSize --= toRemove
+                        res
+                }
 
-                    //logger.info(indexes.map(_._2.size))
-                    val turtlesToSend = indexes.map(x => (x._1, x._2.map(i => agentTurtleToCovidTurtle(turtlesRandomized(i))) ))
-                    turtlesToSend.forEach{
-                        case (countryId, listTurtle) => send(
-                            AgentId(countryId), 
-                            CovidMessage(turtles = Some(listTurtle),  None ) 
-                        )
-                    }
+                //logger.info(indexes.map(_._2.size))
+                val turtlesToSend = indexes.map(x => (x._1, x._2.map(i => agentTurtleToCovidTurtle(turtlesRandomized(i))) ))
+                turtlesToSend.forEach{
+                    case (countryId, listTurtle) => send(
+                        AgentId(countryId), 
+                        CovidMessage(turtles = Some(listTurtle),  None ) 
+                    )
+                }
 
-                    // killing those turtles since they are travelling and removing them from initial people
-                    cmdLater("ask turtles with [ ready-to-travel ] [ die ]")
-                    cmdLater(s"set initial-people initial-people - ${turtles.size}")
+                // killing those turtles since they are travelling and removing them from initial people
+                cmdLater("ask turtles with [ ready-to-travel ] [ die ]")
+                cmdLater(s"set initial-people initial-people - ${turtles.size}")
 
-                  }
-                )    
-            }
+              }
+            )    
+        }
 
-            //TODO create report monad
-            reportAndCallback("count turtles with [ infected? ]", 
-                infectedCount => reportAndCallback("count turtles with [ not infected? ]", notInfectedCount => 
-                    reportAndCallback("count turtles with [ travel? ]", travellers => 
-                        reportAndCallback("ticks", ticks =>  send(
-                                AgentId("ServerManager"), 
-                                CovidMessage(None,  Some(CovidModelBehaviour(
-                                        infectedCount = infectedCount.asInstanceOf[Double].toInt,
-                                        notInfectedCount = notInfectedCount.asInstanceOf[Double].toInt,
-                                        country = modelConfig.name,
-                                        travellers = travellers.asInstanceOf[Double].toInt,
-                                        ticks = ticks.asInstanceOf[Double]
-                                    )
-                                ))
-                            )
+        //TODO create report monad
+        reportAndCallback("count turtles with [ infected? ]", 
+            infectedCount => reportAndCallback("count turtles with [ not infected? ]", notInfectedCount => 
+                reportAndCallback("count turtles with [ travel? ]", travellers => 
+                    reportAndCallback("ticks", ticks =>  send(
+                            AgentId("ServerManager"), 
+                            CovidMessage(None,  Some(CovidModelBehaviour(
+                                    infectedCount = infectedCount.asInstanceOf[Double].toInt,
+                                    notInfectedCount = notInfectedCount.asInstanceOf[Double].toInt,
+                                    country = modelConfig.name,
+                                    travellers = travellers.asInstanceOf[Double].toInt,
+                                    ticks = ticks.asInstanceOf[Double]
+                                )
+                            ))
                         )
                     )
                 )
             )
+        )
 
-
-        }
-
-        def createTurtle(agentTurtle: CovidTurtle) = {
-         val cmdToExecute = s"""  create-turtles 1
-              [
-                setxy random-xcor random-ycor
-                set cured? ${agentTurtle.cured}
-                set infected? ${agentTurtle.infected}
-                set susceptible? ${agentTurtle.susceptible}
-
-
-                set travel? true
-                set ready-to-travel false
-                set shape "butterfly"
-                set size 2
-                set nb-infected ${agentTurtle.nbInfected}
-                set nb-recovered ${agentTurtle.nbRecovered}
-
-
-                set country "${agentTurtle.country}"
-                set recovery-time ${agentTurtle.recoveryTime}
-                set infection-length ${agentTurtle.infectionLength}
-
-
-                assign-color
-              ]"""
-              cmdLater(cmdToExecute)
-        }
-
-        def agentTurtleToCovidTurtle(agentTurtle:org.nlogo.agent.Agent) = {
-            CovidTurtle(
-                cured = agentTurtle.getTurtleOrLinkVariable("CURED?").asInstanceOf[Boolean],
-                infected = agentTurtle.getTurtleOrLinkVariable("INFECTED?").asInstanceOf[Boolean],
-                susceptible = agentTurtle.getTurtleOrLinkVariable("SUSCEPTIBLE?").asInstanceOf[Boolean],
-                country = agentTurtle.getTurtleOrLinkVariable("COUNTRY").toString,
-                recoveryTime =  agentTurtle.getTurtleOrLinkVariable("RECOVERY-TIME").asInstanceOf[Double],
-                infectionLength = agentTurtle.getTurtleOrLinkVariable("INFECTION-LENGTH").asInstanceOf[Double],
-                nbInfected = agentTurtle.getTurtleOrLinkVariable("NB-INFECTED").asInstanceOf[Double],
-                nbRecovered = agentTurtle.getTurtleOrLinkVariable("NB-RECOVERED").asInstanceOf[Double]
-            )
-        }
-
-        override def setup = {
-            cmd(s"set initial-people ${modelConfig.initialPeople}")
-            cmd(s"set infection-chance ${modelConfig.infectionChance}")
-            cmd(s"set recovery-chance ${modelConfig.recoveryChance}")
-            cmd(s"set average-recovery-time ${modelConfig.averageRecoveryTime}")
-            cmd(s"set p-travel ${modelConfig.pTravel}")
-            cmd(s"""set g-country \"${modelConfig.name}\"""")
-        }
 
     }
 
-}
+    def createTurtle(agentTurtle: CovidTurtle) = {
+     val cmdToExecute = s"""  create-turtles 1
+          [
+            setxy random-xcor random-ycor
+            set cured? ${agentTurtle.cured}
+            set infected? ${agentTurtle.infected}
+            set susceptible? ${agentTurtle.susceptible}
 
+
+            set travel? true
+            set ready-to-travel false
+            set shape "butterfly"
+            set size 2
+            set nb-infected ${agentTurtle.nbInfected}
+            set nb-recovered ${agentTurtle.nbRecovered}
+
+
+            set country "${agentTurtle.country}"
+            set recovery-time ${agentTurtle.recoveryTime}
+            set infection-length ${agentTurtle.infectionLength}
+
+
+            assign-color
+          ]"""
+          cmdLater(cmdToExecute)
+    }
+
+    def agentTurtleToCovidTurtle(agentTurtle:org.nlogo.agent.Agent) = {
+        CovidTurtle(
+            cured = agentTurtle.getTurtleOrLinkVariable("CURED?").asInstanceOf[Boolean],
+            infected = agentTurtle.getTurtleOrLinkVariable("INFECTED?").asInstanceOf[Boolean],
+            susceptible = agentTurtle.getTurtleOrLinkVariable("SUSCEPTIBLE?").asInstanceOf[Boolean],
+            country = agentTurtle.getTurtleOrLinkVariable("COUNTRY").toString,
+            recoveryTime =  agentTurtle.getTurtleOrLinkVariable("RECOVERY-TIME").asInstanceOf[Double],
+            infectionLength = agentTurtle.getTurtleOrLinkVariable("INFECTION-LENGTH").asInstanceOf[Double],
+            nbInfected = agentTurtle.getTurtleOrLinkVariable("NB-INFECTED").asInstanceOf[Double],
+            nbRecovered = agentTurtle.getTurtleOrLinkVariable("NB-RECOVERED").asInstanceOf[Double]
+        )
+    }
+
+    override def setup = {
+        cmd(s"set initial-people ${modelConfig.initialPeople}")
+        cmd(s"set infection-chance ${modelConfig.infectionChance}")
+        cmd(s"set recovery-chance ${modelConfig.recoveryChance}")
+        cmd(s"set average-recovery-time ${modelConfig.averageRecoveryTime}")
+        cmd(s"set p-travel ${modelConfig.pTravel}")
+        cmd(s"""set g-country \"${modelConfig.name}\"""")
+    }
+
+}

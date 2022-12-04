@@ -38,24 +38,15 @@ class Agent[T](configuration: AgentConfig)(
     override def run(): Unit = pollingLoop
   }
 
-  // TODO: remove
-  override def disconnect(agentId: AgentId): Unit = {}
-
   /**
     * receive method to process incoming agent messages
     * @param agentMessages ordered list of agent messages (from most recent to less recent)
     * @param consumerName name of the consumer that process the list of message
-     **/
+       **/
   override def receive(
       agentMessages: List[AgentMessage[T]],
       consumerName: String = "defaultAgentMessageConsumer"
   ) = {}
-
-  /**
-    * receive method to process incoming string messages
-    * @param agentMessages ordered list of string messages (from most recent to less recent)
-     **/
-  override def receiveSimpleMessages(agentMessages: List[String]) = {}
 
   override def forcedie: Unit = {}
   override def init: Unit = {}
@@ -63,7 +54,7 @@ class Agent[T](configuration: AgentConfig)(
   /**
     * Loop used to process the incoming messages
     *
-     **/
+       **/
   override def pollingLoop: Unit = {
     try {
       while (wantToDie == false) {
@@ -101,6 +92,7 @@ class Agent[T](configuration: AgentConfig)(
                 }
               if (!recordsAgentMessageListNotDefault.isEmpty)
                 receive(recordsAgentMessageListNotDefault, consumerName)
+
               consumer.commitAsync
 
           }
@@ -108,9 +100,10 @@ class Agent[T](configuration: AgentConfig)(
 
       }
     } catch {
-      case e: WakeupException => logger.info("Wakeup exception")
+      case e: WakeupException => logger.error("Wakeup exception")
 
     } finally {
+      logger.debug("Polling loop finished")
       die
     }
   }
@@ -125,8 +118,8 @@ class Agent[T](configuration: AgentConfig)(
 
   /**
     * Terminates polling loop
-     **/
-  def suicide = { this.wantToDie = true }
+    **/
+  def terminate = { this.wantToDie = true }
 
   def this(
       agentId: AgentId,
@@ -136,6 +129,7 @@ class Agent[T](configuration: AgentConfig)(
       defaultConfig(brokers = brokers, agentId = agentId)
     )(serializer, deserializer)
   }
+
 }
 
 object Agent {

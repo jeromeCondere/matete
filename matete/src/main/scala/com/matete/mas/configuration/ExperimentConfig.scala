@@ -1,6 +1,5 @@
 package com.matete.mas.configuration
 
-
 case class ExperimentConfig[T](
     id: String,
     name: String,

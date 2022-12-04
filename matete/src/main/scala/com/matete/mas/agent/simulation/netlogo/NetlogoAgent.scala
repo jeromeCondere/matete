@@ -82,8 +82,7 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
   final def reportAndCallback(
       code: String,
       resultHandler: (AnyRef) => Unit,
-      errorHandler: (CompilerException) => Unit = (errorHandler) =>
-        errorHandler.printStackTrace
+      errorHandler: (CompilerException) => Unit = (errorHandler) => errorHandler.printStackTrace
   ): Unit = {
     comp.reportAndCallback(
       code,
@@ -126,6 +125,7 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
       )
       setup
       runModel
+      logger.info("etooo")
     }
   }
 
@@ -144,6 +144,9 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
         if (ticks < netlogoModel.maxTicks.toDouble) {
           ticks = ticksCounter.toInt
           check
+        } else {
+          terminate
+          logger.info("ticks > maxTicks")
         }
       }
       override def buttonPressed(buttonName: String): Unit = {}
@@ -170,7 +173,6 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
       ): Unit = {}
       override def modelOpened(name: String): Unit = {}
       override def possibleViewUpdate(): Unit = {}
-      //TODO: change those two
       override def sliderChanged(
           name: String,
           value: Double,
@@ -187,10 +189,12 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
       ): Unit = {}
     })
 
-    pollingLoopThread.join
     netlogoThread.join
+    pollingLoopThread.join
+
     logger.info(s"the polling loop thread has finished")
     logger.info(s"the netlogo thread has finished")
+    die
 
   }
 }

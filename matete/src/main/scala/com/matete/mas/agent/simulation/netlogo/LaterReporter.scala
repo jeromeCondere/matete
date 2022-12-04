@@ -1,7 +1,4 @@
 // package com.matete.mas.agent.simulation.netlogo
-
-
-
 // case class State(value: Int) {
 
 //   def flatMap(f: Int => State): State = {
@@ -72,11 +69,11 @@
 // }
 
 // //TODO create report monad
-// reportAndCallback("count turtles with [ infected? ]", 
-//     infectedCount => reportAndCallback("count turtles with [ not infected? ]", notInfectedCount => 
-//         reportAndCallback("count turtles with [ travel? ]", travellers => 
+// reportAndCallback("count turtles with [ infected? ]",
+//     infectedCount => reportAndCallback("count turtles with [ not infected? ]", notInfectedCount =>
+//         reportAndCallback("count turtles with [ travel? ]", travellers =>
 //             reportAndCallback("ticks", ticks =>  send(
-//                     AgentId("ServerManager"), 
+//                     AgentId("ServerManager"),
 //                     CovidMessage(None,  Some(CovidModelBehaviour(
 //                             infectedCount = infectedCount.asInstanceOf[Double].toInt,
 //                             notInfectedCount = notInfectedCount.asInstanceOf[Double].toInt,
@@ -88,4 +85,4 @@
 //                 )
 //             )
 //         )
-//                 
+//
