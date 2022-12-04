@@ -12,6 +12,8 @@ import com.matete.mas.agent.simulation.SimulationAgent
 import org.nlogo.api.NetLogoListener
 import org.nlogo.core._
 
+//TODO: netlogo agent does not terminate properly when stop before can't tick anymore
+
 /**
   * A class used to create a classic netlogoAgent that run the model .nlogo file
   *
@@ -75,6 +77,7 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
     }
   }
 
+  //TODO: print stack trace + send wake up exception
   /**
     Report by using handler to catch either the result or the error
     Returns a value from the code provided
@@ -125,8 +128,20 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
       )
       setup
       runModel
-      logger.info("etooo")
+      terminate
     }
+  }
+
+    /**
+    * close all the consumers and producers
+     **/
+  override def die: Unit = {
+    logger.info("Agent dying now!")
+
+    this.consumers.foreach { case (_, kafkaConsumer) => kafkaConsumer.close }
+    this.producers.foreach { case (_, kafkaProducer) => kafkaProducer.close }
+    frame.dispose
+
   }
 
   /**Runs the netlogo model*/
@@ -146,7 +161,7 @@ abstract class NetlogoAgent[T](configuration: AgentConfig)(
           check
         } else {
           terminate
-          logger.info("ticks > maxTicks")
+          logger.debug("ticks > maxTicks")
         }
       }
       override def buttonPressed(buttonName: String): Unit = {}

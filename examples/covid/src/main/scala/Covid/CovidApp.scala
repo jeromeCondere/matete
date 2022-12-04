@@ -110,7 +110,7 @@ object CovidModel {
     def model(title: String, modelPath: String) = {
         NetlogoModel(
             src = modelPath,
-            maxTicks = 100, //290
+            maxTicks = 290,
             width = 1000,
             height = 900,
             title = Some(title)

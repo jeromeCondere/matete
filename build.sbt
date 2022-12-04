@@ -66,12 +66,11 @@ lazy val commonSettings = Seq(
   libraryDependencies += "io.circe" %% "circe-generic-extras" % circe,
   libraryDependencies += "io.circe" %% "circe-core" % circe,
   libraryDependencies += "io.circe" %% "circe-parser" % circe,
+  libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+  libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  libraryDependencies += "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
 
-  libraryDependencies += "com.nequissimus" %% "circe-kafka" % "2.7.0",
-
-  // libraryDependencies += "com.ovoenergy" %% "kafka-serialization-core" % kafkaSerializationV,
-  // libraryDependencies += "com.ovoenergy" %% "kafka-serialization-circe" % kafkaSerializationV,
-  // libraryDependencies += "com.ovoenergy" %% "kafka-serialization-core" % kafkaSerializationV,
+  //libraryDependencies += "com.nequissimus" %% "circe-kafka" % "2.7.0",
 
   libraryDependencies += "io.confluent" % "kafka-avro-serializer" % avroVersion,
 

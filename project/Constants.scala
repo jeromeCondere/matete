@@ -14,4 +14,6 @@ object  Constants {
     lazy val paraboiled = "2.1.7"
     lazy val kafkaSerializationV = "0.5.25"
     lazy val postgresql = "42.5.0"//"9.3-1100-jdbc4"
+    lazy val akkaVersion = "2.7.0"
+    lazy val akkaHttpVersion = "10.4.0"
 }
