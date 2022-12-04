@@ -1,11 +1,9 @@
-// an experiment is a sum of mas running producing an output with different base parameters
-// test1 -> output1 + test2 -> output2 + test3 -> output3
+package com.matete.mas.example
 
-// like the scalatest it is possible to test an experiment to check that our model is good
+import com.matete.mas.configuration.ExperimentConfig
 
-// the confinement in covid shoud lower the number of infected
 
-class Experiment(config: ExperimentConfig) {
+class Experiment[E](config: ExperimentConfig[E]) {
   def run = {}
   def evaluate = {}
 }

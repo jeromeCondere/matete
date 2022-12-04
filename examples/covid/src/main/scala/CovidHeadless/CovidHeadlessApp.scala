@@ -14,9 +14,6 @@ import com.matete.mas.configuration.DefaultConfig.defaultConfig
 import com.matete.mas.agent.AgentMessage
 import com.matete.mas.agent.simulation.netlogo.NetlogoModel
 import com.matete.mas.agent.simulation.netlogo.NetlogoHeadlessAgent
-import scala.io.Source
-import org.nlogo.lite.InterfaceComponent
-import org.nlogo.lite.InterfaceComponent._
 import io.circe.yaml.parser
 import java.io.InputStreamReader
 import CovidConfigImplicits._
@@ -27,13 +24,6 @@ import scala.util.Random
 
 
 object CovidHeadlessApp  extends App {
-
-    // if (System.getProperty("java.awt.headless") == null) {
-    //     System.setProperty("java.awt.headless", "true")
-    // }
-    // System.setProperty("org.nlogo.preferHeadless", "true")
-
-    // doesn't work without main, or using App only
 
     if (System.getProperty("java.awt.headless") == null) {
         System.setProperty("java.awt.headless", "true")
@@ -80,7 +70,6 @@ object CovidHeadlessApp  extends App {
         case Left(x) => logger.error("error parsing")
         case Right(y) => logger.info("the file provided is correct")
     }
-
 
     setTopic("ServerManager")
 
@@ -194,6 +183,7 @@ object CovidHeadlessApp  extends App {
                         CovidMessage(turtles = Some(listTurtle),  None ) 
                     )
                 }
+                
                 // killing those turtles since they are travelling and removing them from initial people
                 cmd("ask turtles with [ ready-to-travel ] [ die ]")
                 cmd(s"set initial-people initial-people - ${turtles.size}")

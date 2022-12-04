@@ -1,7 +1,9 @@
 package com.matete.mas.configuration
 
-case class ExperimentConfig(
-    description: Option[String] = None,
+
+case class ExperimentConfig[T](
     id: String,
-    brokers: List[String]
+    name: String,
+    description: Option[String] = None,
+    parameters: T
 )

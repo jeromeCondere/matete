@@ -28,20 +28,13 @@ import scala.util.Random
 
 object CovidApp  extends App {
 
-    // if (System.getProperty("java.awt.headless") == null) {
-    //     System.setProperty("java.awt.headless", "true")
-    // }
-    // System.setProperty("org.nlogo.preferHeadless", "true")
 
-    // doesn't work without main, or using App only
     val logger = LogManager.getLogger("CovidApp")
     val broker =  args(0)
     val modelPath = args(2)
     val host = args(1)
 
     
-    //val modelPath = "/home/alpha-omega/Bureau/my_netlogo_example/epiDEM_Basic.nlogo"
-
     def setTopic(name: String) = {
         val topicName = s"$name-topic"
         val newTopics = List(
@@ -190,6 +183,7 @@ object CovidApp  extends App {
                             CovidMessage(turtles = Some(listTurtle),  None ) 
                         )
                     }
+
                     // killing those turtles since they are travelling and removing them from initial people
                     cmdLater("ask turtles with [ ready-to-travel ] [ die ]")
                     cmdLater(s"set initial-people initial-people - ${turtles.size}")
@@ -198,7 +192,7 @@ object CovidApp  extends App {
                 )    
             }
 
-
+            //TODO create report monad
             reportAndCallback("count turtles with [ infected? ]", 
                 infectedCount => reportAndCallback("count turtles with [ not infected? ]", notInfectedCount => 
                     reportAndCallback("count turtles with [ travel? ]", travellers => 
