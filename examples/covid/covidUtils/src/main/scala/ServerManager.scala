@@ -22,30 +22,40 @@ class ServerManager(brokers: List[String], host: String = "localhost") extends A
 
     val con_str = s"jdbc:postgresql://$host/$DBName?user=$DBUser&password=$pwd"
 
-    val create_experiment_table  = """CREATE TABLE IF NOT EXISTS event_covid(
-       experiment_no  varchar(50),
+    val create_event_table  = """CREATE TABLE IF NOT EXISTS event_covid(
+       agent_id varchar(80),
+       experiment_id  varchar(50),
        country varchar(80),
        infected_count bigint,
        not_infected_count bigint,
        travellers bigint,
        ticks double precision
     );"""
-   
+
+    val create_experiment_id  = """CREATE TABLE IF NOT EXISTS experiment(
+       experiment_id  varchar(50),
+       description text
+    );"""
+      
 
     val conn = DriverManager.getConnection(con_str)
     try {
         val stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-        val rs = stm.execute(create_experiment_table)
+        val rs = stm.execute(create_event_table)
+
+        val stm2 = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+        val rs2 = stm.execute(create_experiment_id)
     } finally {
      conn.close()
     }
 
     override def receive(agentMessages: List[AgentMessage[CovidMessage]], consumerName: String) = {
         val insertQuery = agentMessages.map( agentMessage => {
-            val modelTrend =  agentMessage.message.modelBehavior.get
+            val covidMessage = agentMessage.message
+            val modelTrend =  covidMessage.modelBehavior.get
             s""" 
-                insert into event_covid(experiment_no, country, infected_count, not_infected_count, travellers, ticks)
-                values ('experiment_no1','${modelTrend.country}', ${modelTrend.infectedCount}, ${modelTrend.notInfectedCount}, ${modelTrend.travellers}, ${modelTrend.ticks});
+                insert into event_covid(agent_id, experiment_id, country, infected_count, not_infected_count, travellers, ticks)
+                values ('${agentMessage.agentId.id}','${covidMessage.experimentId}','${modelTrend.country}', ${modelTrend.infectedCount}, ${modelTrend.notInfectedCount}, ${modelTrend.travellers}, ${modelTrend.ticks});
             """
         }).mkString("\n")
 

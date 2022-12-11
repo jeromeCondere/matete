@@ -14,6 +14,7 @@ case class CovidTurtle(
 
 case class CovidModelBehaviour(infectedCount: Int, notInfectedCount: Int, country: String, travellers: Int, ticks: Double)
 case class CovidMessage(
+	experimentId: String, 
 	turtles: Option[List[CovidTurtle]] = None,
 	modelBehavior: Option[CovidModelBehaviour] = None
 )

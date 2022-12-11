@@ -42,7 +42,8 @@ jeromecondere/mmm
 
 
 
-java -Djava.awt.headless=true  -jar CovidApp-0.1.0-SNAPSHOT_2.12.15.jar localhost:9092 localhost:5432 /home/alpha-omega/Bureau/kafka_projects/matete_MAS/examples/covid/src/resources/epiDEM_Basic.nlogo
+java -jar CovidApp-0.1.0-SNAPSHOT_2.12.15.jar localhost:9092 localhost:5432 /home/alpha-omega/Bureau/kafka_projects/matete_MAS/examples/covid/src/resources/epiDEM_Basic.nlogo
+java -Djava.awt.headless=true  -jar CovidHeadlessApp-0.1.0-SNAPSHOT_2.12.15.jar localhost:9092 localhost:5432 /home/alpha-omega/Bureau/kafka_projects/matete_MAS/examples/covid/src/resources/epiDEM_Basic.nlogo
 
 java  -cp "netlogo-6.2.0.jar"  -jar CovidApp-0.1.0-SNAPSHOT_2.12.15.jar localhost:9092 localhost:5432 /home/alpha-omega/Bureau/kafka_projects/matete_MAS/examples/covid/src/resources/epiDEM_Basic.nlogo
 
@@ -54,9 +55,18 @@ kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic uk-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic france-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic ServerManager-topic
+
+
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic uk-cobalt-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic france-cobalt-topic
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-cobalt-topic
+
+
 kafka-topics.sh --bootstrap-server localhost:9092 --list
 
 
+
+falconia-kovwaltkoi-cobalt-topic
 docker stop $(docker ps -a -q)
 
 docker run --rm --name postgres -p 5432:5432 \

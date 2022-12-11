@@ -38,6 +38,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.matete.mas.experiment.ExperimentServerApi
 import com.matete.mas.configuration.ExperimentConfig
+import com.matete.mas.agent.AgentImplicits._
 
 
 object CovidApp  extends App {
@@ -60,11 +61,9 @@ object CovidApp  extends App {
     val modelPath = args(2)
     val host = args(1)
 
-
-
     
     def setTopic(name: String) = {
-        val topicName = s"$name-topic"
+        val topicName = name.toTopic
         val newTopics = List(
             new NewTopic(topicName, 1, 1.toShort) 
         )
@@ -127,7 +126,7 @@ object CovidModel {
 
 
 
-class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConfig, netlogoModel: NetlogoModel) 
+class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConfig, netlogoModel: NetlogoModel, experimentId: String) 
     extends NetlogoAgent[CovidMessage](defaultConfig(brokers = brokers, agentId = agentId))(
         Some("com.matete.examples.covid.AgentMessageCovidMessageSerializer"),
         Some("com.matete.examples.covid.AgentMessageCovidMessageDeserializer")
@@ -189,7 +188,7 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
                 turtlesToSend.forEach{
                     case (countryId, listTurtle) => send(
                         AgentId(countryId), 
-                        CovidMessage(turtles = Some(listTurtle),  None ) 
+                        CovidMessage(experimentId, turtles = Some(listTurtle),  None ) 
                     )
                 }
 
@@ -207,7 +206,7 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
                 reportAndCallback("count turtles with [ travel? ]", travellers => 
                     reportAndCallback("ticks", ticks =>  send(
                             AgentId("ServerManager"), 
-                            CovidMessage(None,  Some(CovidModelBehaviour(
+                            CovidMessage(experimentId, None,  Some(CovidModelBehaviour(
                                     infectedCount = infectedCount.asInstanceOf[Double].toInt,
                                     notInfectedCount = notInfectedCount.asInstanceOf[Double].toInt,
                                     country = modelConfig.name,
@@ -291,10 +290,10 @@ class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[E
                 model =>   {
 
                     logger.info(s"setting up model ${model.name}")
-                    val agentId =(model.name+"-"+experimentConfig.name+"-"+experimentConfig.id).toLowerCase.replaceAll(" ", "") 
+                    val agentId =(model.name+"-"+experimentConfig.id).toLowerCase.replaceAll(" ", "") 
                     setTopic(agentId)
 
-                    val covid = new Covid(List(broker), AgentId(agentId), model, CovidModel.model(s"Covid ${model.name}", modelPath))
+                    val covid = new Covid(List(broker), AgentId(agentId), model, CovidModel.model(s"Covid ${model.name} ${experimentConfig.id}", modelPath), experimentConfig.id)
                     logger.info(s"running model ${model.name}")
 
                     val covidThread = new Thread {
@@ -309,7 +308,7 @@ class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[E
     }
 
     def setTopic(name: String) = {
-        val topicName = s"$name-topic"
+        val topicName = name.toTopic
         val newTopics = List(
             new NewTopic(topicName, 1, 1.toShort) 
         )
@@ -325,7 +324,7 @@ class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[E
                 case (topicName, kafkaFuture) =>   kafkaFuture.whenComplete {
                     case (_, throwable: Throwable) if Option(throwable).isDefined => logger.error(s"topic $topicName could'nt be created")
                     case _ => logger.info(s"topic $topicName created")
-                } 
+                }
             }
         } else {
             logger.info(s"topic $topicName already exists, won't be created")
