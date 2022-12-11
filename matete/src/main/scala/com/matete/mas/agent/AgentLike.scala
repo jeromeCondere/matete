@@ -1,5 +1,7 @@
 package com.matete.mas.agent
 
+import AgentImplicits._
+
 trait AgentLike[T] {
 
   def init: Unit = {}
@@ -17,7 +19,7 @@ trait AgentLike[T] {
 
   def run
   def pollingLoop
-  def getTopic(agentId: AgentId): String = agentId.id + "-topic"
+  def getTopic(agentId: AgentId): String = agentId.id.toTopic
   def getTopicGroupBase(agentId: AgentId): String = getTopic(agentId) + "-group"
 
 }

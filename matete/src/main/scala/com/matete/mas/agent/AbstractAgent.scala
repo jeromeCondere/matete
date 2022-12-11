@@ -8,8 +8,6 @@ import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
 import com.matete.mas.configuration._
 
-case class AgentId(id: String)
-
 /**
   *
   * @param configuration agent configuration

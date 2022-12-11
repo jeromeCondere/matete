@@ -25,15 +25,16 @@ class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: Acto
 
 
   def descriptionRoute = pathEnd {
-      get {
-        complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Experiment</h1>"))
-      }
+    get {
+      complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Experiment</h1>"))
+    }
   }
 
 
   def topLevelRoot = concat(
-      path("description")(descriptionRoute),
-      path("experiment")(experimentRoute)
+    path("description")(descriptionRoute),
+    path("experiment")(experimentRoute),
+    path("collect")(collectRoute)
   )
 
   val experimentRoute = pathEnd {
@@ -57,18 +58,40 @@ class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: Acto
       )
   }
 
+  //TODO: add collect to route
+  val collectRoute = pathEnd {
+      concat(
+          get {
+            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Collect</h1><p>collect data about a specific experiment</p>"))
+          },
+          post {
+
+            // decompress gzipped or deflated requests if required
+            decodeRequest {
+              entity(as[ExperimentConfig[E]]) { experimentConfig =>
+                complete {
+                  logger.info(s"Collecting experiment ${experimentConfig.name} data")
+                  collect(experimentConfig)
+                  "data collected"
+                }
+              }
+            }
+          }
+      )
+  }
+
 
 
 
 
   val bindingFuture = Http().newServerAt("localhost", port).bind(topLevelRoot)
-  logger.info(s"Server now online. Please navigate to http://localhost:$port/description to get all the info about the api\nPress RETURN to stop...")
+  logger.info(s"Server now online. Please navigate to http://localhost:$port/description to get all the info about the api")
 
  
   
-  def runExperiment(experimentConfig: ExperimentConfig[E]) = {
+  def runExperiment(experimentConfig: ExperimentConfig[E]) = {}
 
-  }
+  def collect(experimentConfig: ExperimentConfig[E]) = {}
 
   def stop = {
      bindingFuture
