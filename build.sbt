@@ -69,6 +69,8 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   libraryDependencies += "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+
 
   //libraryDependencies += "com.nequissimus" %% "circe-kafka" % "2.7.0",
 

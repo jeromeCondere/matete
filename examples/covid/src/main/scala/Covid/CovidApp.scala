@@ -18,6 +18,7 @@ import scala.io.Source
 import org.nlogo.lite.InterfaceComponent
 import org.nlogo.lite.InterfaceComponent._
 import io.circe.yaml.parser
+import io.circe._
 import java.io.InputStreamReader
 import CovidConfigImplicits._
 import org.nlogo.agent._
@@ -26,13 +27,40 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
+import scala.io.StdIn
+
+import spray.json._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.matete.mas.experiment.ExperimentServerApi
+import com.matete.mas.configuration.ExperimentConfig
+
+
 object CovidApp  extends App {
+
+
+
+    implicit val system = ActorSystem()
+
+    // needed for the future flatMap/onComplete in the end
+    implicit val executionContext = system.dispatcher
+
+   
+
+
+    //StdIn.readLine() // let it run until user presses return
 
 
     val logger = LogManager.getLogger("CovidApp")
     val broker =  args(0)
     val modelPath = args(2)
     val host = args(1)
+
+
 
     
     def setTopic(name: String) = {
@@ -69,6 +97,7 @@ object CovidApp  extends App {
         case Right(y) => logger.info("the file provided is correct")
     }
 
+    val ckt = CovidExperimentServerApi(broker, 7070)(jsons, modelPath)
 
     setTopic("ServerManager")
 
@@ -79,28 +108,6 @@ object CovidApp  extends App {
         }
     }
     forDBThread.start
-
-
-    //init covid models from global config            
-    val model = jsons.head.flatMap(_.as[GlobalModelConfig]).toOption.foreach(
-        globalConfig => globalConfig.models.foreach(
-            model =>   {
-
-                logger.info(s"setting up model ${model.name}")
-                setTopic(model.name)
-                val covid = new Covid(List(broker), AgentId(model.name), model, CovidModel.model(s"Covid ${model.name}", modelPath))
-                logger.info(s"running model ${model.name}")
-
-                val covidThread = new Thread {
-                    override def run {
-                       covid.run
-                    }
-                }
-                covidThread.start
-
-            }
-        )
-    )
 
 }
 
@@ -266,4 +273,71 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
         cmd(s"""set g-country \"${modelConfig.name}\"""")
     }
 
+}
+
+final case class Ioud(iok: Int, ujl: String)
+
+object MyJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
+  implicit val ioudFormat = jsonFormat2(Ioud.apply)
+}
+
+class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, ioudFormat: JsonFormat[Ioud]) extends ExperimentServerApi[Ioud](port)  {
+    import MyJsonProtocol._
+    override def runExperiment(experimentConfig: ExperimentConfig[Ioud]) = {
+
+        //init covid models from global config            
+        val model = jsons.head.flatMap(_.as[GlobalModelConfig]).toOption.foreach(
+            globalConfig => globalConfig.models.foreach(
+                model =>   {
+
+                    logger.info(s"setting up model ${model.name}")
+                    val agentId =(model.name+"-"+experimentConfig.name+"-"+experimentConfig.id).toLowerCase.replaceAll(" ", "") 
+                    setTopic(agentId)
+
+                    val covid = new Covid(List(broker), AgentId(agentId), model, CovidModel.model(s"Covid ${model.name}", modelPath))
+                    logger.info(s"running model ${model.name}")
+
+                    val covidThread = new Thread {
+                        override def run {
+                           covid.run
+                        }
+                    }
+                    covidThread.start
+                }
+            )
+        )
+    }
+
+    def setTopic(name: String) = {
+        val topicName = s"$name-topic"
+        val newTopics = List(
+            new NewTopic(topicName, 1, 1.toShort) 
+        )
+
+        
+        val props = new Properties()
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker)
+        val client = AdminClient.create(props)
+        val topicsList = client.listTopics().names().get().asScala.filter(_ == topicName )
+
+        if(topicsList.isEmpty) { 
+            client.createTopics(newTopics.asJava).values().asScala.map{
+                case (topicName, kafkaFuture) =>   kafkaFuture.whenComplete {
+                    case (_, throwable: Throwable) if Option(throwable).isDefined => logger.error(s"topic $topicName could'nt be created")
+                    case _ => logger.info(s"topic $topicName created")
+                } 
+            }
+        } else {
+            logger.info(s"topic $topicName already exists, won't be created")
+        }
+    }
+} 
+
+
+object CovidExperimentServerApi {
+
+    def apply(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidExperimentServerApi = {
+        import MyJsonProtocol._
+        new CovidExperimentServerApi(broker, port)(jsons, modelPath)
+    }
 }

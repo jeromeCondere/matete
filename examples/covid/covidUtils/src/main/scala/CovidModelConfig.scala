@@ -11,7 +11,8 @@ import io.circe.generic.extras.semiauto
 // p transmission: among the people travelling how much are going to the country
 case class Frontier(countryId: String, pTransmission: Float)
 case class CovidModelConfig(
-    name: String, initialPeople: Int,
+    name: String, 
+    initialPeople: Int,
     pTravel: Double,
     infectionChance: Double,
     recoveryChance: Double,

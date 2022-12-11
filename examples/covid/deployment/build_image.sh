@@ -58,3 +58,13 @@ kafka-topics.sh --bootstrap-server localhost:9092 --list
 
 
 docker stop $(docker ps -a -q)
+
+docker run --rm --name postgres -p 5432:5432 \
+-e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+-e POSTGRES_DB=db \
+-e POSTGRES_HOST_AUTH_METHOD=md5 \
+-d postgres
+
+
+
+curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt", "name": "kovwaltkoi", "description": null, "parameters": {"iok": 545, "ujl": "mfejo"}}' localhost:7070/experiment
