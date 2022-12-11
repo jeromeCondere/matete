@@ -37,6 +37,7 @@ class ServerManager(brokers: List[String], host: String = "localhost") extends A
        description text
     );"""
       
+// select ('${agentMessage.agentId.id}','${covidMessage.experimentId}','${modelTrend.country}', ${modelTrend.infectedCount}, ${modelTrend.notInfectedCount}, ${modelTrend.travellers}, ${modelTrend.ticks});
 
     val conn = DriverManager.getConnection(con_str)
     try {
@@ -53,9 +54,22 @@ class ServerManager(brokers: List[String], host: String = "localhost") extends A
         val insertQuery = agentMessages.map( agentMessage => {
             val covidMessage = agentMessage.message
             val modelTrend =  covidMessage.modelBehavior.get
+            // insert to avoid duplicates
+
             s""" 
                 insert into event_covid(agent_id, experiment_id, country, infected_count, not_infected_count, travellers, ticks)
-                values ('${agentMessage.agentId.id}','${covidMessage.experimentId}','${modelTrend.country}', ${modelTrend.infectedCount}, ${modelTrend.notInfectedCount}, ${modelTrend.travellers}, ${modelTrend.ticks});
+                select '${agentMessage.agentId.id}','${covidMessage.experimentId}','${modelTrend.country}', ${modelTrend.infectedCount}, ${modelTrend.notInfectedCount}, ${modelTrend.travellers}, ${modelTrend.ticks}
+                WHERE
+                NOT EXISTS (
+                    SELECT agent_id, experiment_id, country, infected_count, not_infected_count, travellers, ticks FROM event_covid
+                     WHERE agent_id = '${agentMessage.agentId.id}' and 
+                     experiment_id ='${covidMessage.experimentId}' and 
+                     country ='${modelTrend.country}' and 
+                     infected_count = ${modelTrend.infectedCount} and 
+                     not_infected_count= ${modelTrend.notInfectedCount} and 
+                     travellers = ${modelTrend.travellers} and 
+                     ticks = ${modelTrend.ticks}
+                );
             """
         }).mkString("\n")
 

@@ -39,10 +39,9 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.matete.mas.experiment.ExperimentServerApi
 import com.matete.mas.configuration.ExperimentConfig
 import com.matete.mas.agent.AgentImplicits._
-
+import scala.collection.mutable.Set
 
 object CovidApp  extends App {
-
 
 
     implicit val system = ActorSystem()
@@ -157,7 +156,7 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
             reportAndCallback("p-travel", x => logger.info(s"p-travel $x"))
             only = only + 1
         }
-
+        //TODO: change 25 to config param
         if(ticks % 25 == 0){
             val  frontiers  =   modelConfig.frontiers          
 
@@ -274,34 +273,38 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
 
 }
 
-final case class Ioud(iok: Int, ujl: String)
 
-object MyJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
-  implicit val ioudFormat = jsonFormat2(Ioud.apply)
-}
 
-class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, ioudFormat: JsonFormat[Ioud]) extends ExperimentServerApi[Ioud](port)  {
-    import MyJsonProtocol._
-    override def runExperiment(experimentConfig: ExperimentConfig[Ioud]) = {
+class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, covidParamFormat: JsonFormat[CovidExperimentParameter]) extends ExperimentServerApi[CovidExperimentParameter](port)  {
+    override def runExperiment(experimentConfig: ExperimentConfig[CovidExperimentParameter]) = {
 
         //init covid models from global config            
         val model = jsons.head.flatMap(_.as[GlobalModelConfig]).toOption.foreach(
             globalConfig => globalConfig.models.foreach(
                 model =>   {
+                    val repeat = if(experimentConfig.parameters.repeat <= 0 ) 1 else experimentConfig.parameters.repeat
+                    (1 to repeat).toList.forEach{
+                        r => {
+                            val repeatSuffix = s"-repeat-$r"
+                            val agentId =(model.name+"-"+experimentConfig.id).toLowerCase.replaceAll(" ", "")+repeatSuffix
+                            val experimentId = experimentConfig.id+repeatSuffix
+                            logger.info(s"setting up model ${model.name} id (${agentId})")
 
-                    logger.info(s"setting up model ${model.name}")
-                    val agentId =(model.name+"-"+experimentConfig.id).toLowerCase.replaceAll(" ", "") 
-                    setTopic(agentId)
+                            setTopic(agentId)
 
-                    val covid = new Covid(List(broker), AgentId(agentId), model, CovidModel.model(s"Covid ${model.name} ${experimentConfig.id}", modelPath), experimentConfig.id)
-                    logger.info(s"running model ${model.name}")
+                            val covid = new Covid(List(broker), AgentId(agentId), model, CovidModel.model(s"Covid ${model.name} ${experimentConfig.id}", modelPath), experimentId)
+                            logger.info(s"running model ${model.name} id (${agentId})")
 
-                    val covidThread = new Thread {
-                        override def run {
-                           covid.run
+                            val covidThread = new Thread {
+                                override def run {
+                                   covid.run
+                                }
+                            }
+                            covidThread.start
+
                         }
                     }
-                    covidThread.start
+
                 }
             )
         )
@@ -335,8 +338,8 @@ class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[E
 
 object CovidExperimentServerApi {
 
-    def apply(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidExperimentServerApi = {
-        import MyJsonProtocol._
+    def apply(broker: String, port: Int = 7070)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidExperimentServerApi = {
+        import CovidExperimentParameterJsonProtocol._
         new CovidExperimentServerApi(broker, port)(jsons, modelPath)
     }
 }

@@ -82,8 +82,6 @@ class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: Acto
 
 
 
-
-
   val bindingFuture = Http().newServerAt("localhost", port).bind(topLevelRoot)
   logger.info(s"Server now online. Please navigate to http://localhost:$port/description to get all the info about the api")
 
@@ -91,6 +89,7 @@ class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: Acto
   
   def runExperiment(experimentConfig: ExperimentConfig[E]) = {}
 
+  //TODO must return a specific type
   def collect(experimentConfig: ExperimentConfig[E]) = {}
 
   def stop = {

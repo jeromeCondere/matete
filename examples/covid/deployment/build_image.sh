@@ -6,7 +6,7 @@ docker run --rm --name postgres -p 5432:5432 \
 
 
 
-docker exec -it postgresql psql -d db -U postgres
+docker exec -it postgres psql -d db -U postgres
 
 
 docker run --name covid \
@@ -56,7 +56,6 @@ kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic france-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic ServerManager-topic
 
-
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic uk-cobalt-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete  --topic france-cobalt-topic
 kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-cobalt-topic
@@ -64,6 +63,13 @@ kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic falconia-coba
 
 kafka-topics.sh --bootstrap-server localhost:9092 --list
 
+
+
+
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic 'uk-.*'
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic 'france-.*'
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic 'falconia-.*'
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic ServerManager-topic
 
 
 falconia-kovwaltkoi-cobalt-topic
@@ -78,3 +84,16 @@ docker run --rm --name postgres -p 5432:5432 \
 
 
 curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt", "name": "kovwaltkoi", "description": null, "parameters": {"iok": 545, "ujl": "mfejo"}}' localhost:7070/experiment
+
+
+case class CovidExperimentParameter(recorveryChanceEpsilon: Double, infectionChanceEpsilon: Double, repeat: Int)
+
+curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt", "name": "Covid cobalt", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 3}}' localhost:7070/experiment
+curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt-headless", "name": "Covid cobalt", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 10}}' localhost:7070/experiment
+
+
+
+curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt-headless", "name": "Covid cobalt", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 0}}' localhost:7070/experiment
+
+
+select * from event_covid where experiment_id = 'cobalt-repeat-1' and country='france' order by ticks asc;
