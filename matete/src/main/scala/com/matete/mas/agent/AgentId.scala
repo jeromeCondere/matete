@@ -2,6 +2,9 @@ package com.matete.mas.agent
 
 //TODO: add test for agent id
 class AgentId(val id: String) {
+	override def toString() : String = {
+		s"AgentId($id)"
+	}
 }
 
 case class AgentIdException(message: String) extends Exception(message) 
