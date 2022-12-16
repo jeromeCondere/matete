@@ -30,9 +30,9 @@ services:
       - kafka-app-tier
 
 
-  postgres:
+  postgres-headless:
     image: 'postgres'
-    container_name: 'postgres_db'
+    container_name: 'postgres_db_headless'
     ports:
       - '15432:5432'
     environment:
@@ -44,19 +44,22 @@ services:
       - postgres-app-tier
 
 
-  covid: 
+  covid-headless: 
     build: ./Covid-headless
-    container_name: covid_experiment
+    container_name: 'covid_experiment_headless'
+    ports:
+      - '17070:7070'
     environment:
       - BROKER=kafka:9092 
-      - POSTGRES_HOST=postgres:5432
-
+      - POSTGRES_HOST=postgres-headless
+      - POSTGRES_PORT=5432
+      - SERVER_API_PORT=7070
     networks:
       - kafka-app-tier
       - postgres-app-tier
     depends_on:
       - kafka
-      - postgres
+      - postgres-headless
 
 
 networks:

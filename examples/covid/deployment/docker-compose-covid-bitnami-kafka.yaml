@@ -46,14 +46,17 @@ services:
 
   covid: 
     build: ./Covid
-    container_name: covid_experiment
+    container_name: 'covid_experiment'
+    ports:
+      - '17070:7070'
     environment:
       - BROKER=kafka:9092 
-      - POSTGRES_HOST=postgres:5432
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - SERVER_API_PORT=7070
       - DISPLAY=$DISPLAY
     volumes:
       - /tmp/.X11-unix/:/tmp/.X11-unix/
-
     networks:
       - kafka-app-tier
       - postgres-app-tier

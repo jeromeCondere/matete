@@ -57,8 +57,15 @@ object CovidApp  extends App {
 
     val logger = LogManager.getLogger("CovidApp")
     val broker =  args(0)
-    val modelPath = args(2)
-    val host = args(1)
+    val postgresHost = args(1)
+    val serverApiHost = args(2)
+    val serverApiPort = args(3).toInt
+
+    val postgresUser = if(args.size == 5) "postgres" else args(4)
+    val postgresPassword = if(args.size == 5) "postgres" else args(5)
+    val postgresDb = if(args.size == 5) "db" else args(6)
+
+    val modelPath = if(args.size == 5) args(4) else args(7)
 
     
     def setTopic(name: String) = {
@@ -95,11 +102,11 @@ object CovidApp  extends App {
         case Right(y) => logger.info("the file provided is correct")
     }
 
-    val ckt = CovidExperimentServerApi(broker, 7070)(jsons, modelPath)
+    val ckt = CovidExperimentServerApi(broker,serverApiHost, serverApiPort)(jsons, modelPath)
 
     setTopic("ServerManager")
 
-    val forDB =  new ServerManager(List(broker), host)
+    val forDB =  new ServerManager(List(broker))(host = postgresHost, user = postgresUser, password =  postgresPassword, db =  postgresDb)
     val forDBThread = new Thread {
         override def run {
            forDB.run
@@ -275,7 +282,7 @@ class Covid(brokers: List[String], agentId: AgentId, modelConfig: CovidModelConf
 
 
 
-class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, covidParamFormat: JsonFormat[CovidExperimentParameter]) extends ExperimentServerApi[CovidExperimentParameter](port)  {
+class CovidExperimentServerApi(broker: String, host: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, covidParamFormat: JsonFormat[CovidExperimentParameter]) extends ExperimentServerApi[CovidExperimentParameter](host, port)  {
     override def runExperiment(experimentConfig: ExperimentConfig[CovidExperimentParameter]) = {
 
         //init covid models from global config            
@@ -338,8 +345,8 @@ class CovidExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[E
 
 object CovidExperimentServerApi {
 
-    def apply(broker: String, port: Int = 7070)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidExperimentServerApi = {
+    def apply(broker: String, host: String = "localhost", port: Int = 7070)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidExperimentServerApi = {
         import CovidExperimentParameterJsonProtocol._
-        new CovidExperimentServerApi(broker, port)(jsons, modelPath)
+        new CovidExperimentServerApi(broker, host, port)(jsons, modelPath)
     }
 }

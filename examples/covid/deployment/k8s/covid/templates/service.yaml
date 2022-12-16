@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "covid.service.name" . }}
+  labels:
+    {{- include "covid.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ include "covid.container.port" . }}
+      targetPort: {{ include "covid.container.port" . }}
+      protocol: TCP
+      name: experiment
+  selector:
+    {{- include "covid.selectorLabels" . | nindent 4 }}

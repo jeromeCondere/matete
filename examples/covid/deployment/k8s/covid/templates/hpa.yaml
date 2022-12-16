@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "matete-ping-pong.fullname" . }}
+  name: {{ include "covid.fullname" . }}
   labels:
-    {{- include "matete-ping-pong.labels" . | nindent 4 }}
+    {{- include "covid.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "matete-ping-pong.fullname" . }}
+    name: {{ include "covid.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

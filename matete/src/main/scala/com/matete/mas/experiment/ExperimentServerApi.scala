@@ -17,7 +17,7 @@ trait ExperimentConfigJsonProtocol extends DefaultJsonProtocol with SprayJsonSup
   implicit def experimentConfigFormat[E :JsonFormat]: RootJsonFormat[ExperimentConfig[E]] = jsonFormat4(ExperimentConfig.apply[E])
 }
 
-class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: ActorSystem)  extends ExperimentConfigJsonProtocol{
+class ExperimentServerApi[E: JsonFormat](host: String, port: Int = 7070)(implicit system: ActorSystem)  extends ExperimentConfigJsonProtocol{
 
   implicit val executionContext = system.dispatcher
 
@@ -82,7 +82,7 @@ class ExperimentServerApi[E: JsonFormat](port: Int = 7070)(implicit system: Acto
 
 
 
-  val bindingFuture = Http().newServerAt("localhost", port).bind(topLevelRoot)
+  val bindingFuture = Http().newServerAt(host, port).bind(topLevelRoot)
   logger.info(s"Server now online. Please navigate to http://localhost:$port/description to get all the info about the api")
 
  

@@ -7,20 +7,16 @@ import com.matete.mas.configuration.DefaultConfig.defaultConfig
 import java.sql.{Connection, DriverManager, ResultSet}
 
 
-class ServerManager(brokers: List[String], host: String = "localhost") extends Agent[CovidMessage](defaultConfig(brokers = brokers, agentId = AgentId("ServerManager")))(
+class ServerManager(brokers: List[String])(host: String = "localhost", user: String = "postgres", password: String = "postgres", db: String = "db") extends Agent[CovidMessage](defaultConfig(brokers = brokers, agentId = AgentId("ServerManager")))(
         Some("com.matete.examples.covid.AgentMessageCovidMessageSerializer"),
         Some("com.matete.examples.covid.AgentMessageCovidMessageDeserializer")
      ) with Runnable{
 
 
     classOf[org.postgresql.Driver]
-    val DBUser = "postgres"
-    val DBName = "db"
-    val pwd = "postgres"
 
 
-
-    val con_str = s"jdbc:postgresql://$host/$DBName?user=$DBUser&password=$pwd"
+    val con_str = s"jdbc:postgresql://$host/$db?user=$user&password=$password"
 
     val create_event_table  = """CREATE TABLE IF NOT EXISTS event_covid(
        agent_id varchar(80),

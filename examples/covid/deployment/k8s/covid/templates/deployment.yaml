@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "covid.fullname" . }}
+  labels:
+    {{- include "covid.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "covid.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "covid.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "covid.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "covid.container.name" . }}
+          env:
+          - name: BROKER
+            value: {{ include "covid.kafka.brokerName" .  | quote }}
+          - name: JAVA_OPTS
+            value: "-XX:-UseContainerSupport"
+          - name: POSTGRES_HOST
+            value: {{ include "covid.postgresql.host" .  | quote }}
+          - name: POSTGRES_PORT
+            value:  {{ include "covid.postgresql.port" . | quote }} 
+          - name: SERVER_API_PORT
+            value: {{ include "covid.container.port" .  | quote }}
+          - name: POSTGRES_USER
+            value: "postgres"
+          - name: POSTGRES_PASSWORD
+            value: {{ .Values.postgresql.global.postgresql.auth.postgresPassword  | quote }}
+          - name: POSTGRES_DB
+            value: {{ .Values.postgresql.global.postgresql.auth.database  | quote }}
+          - name: BASIC_USER_GROUP
+            value: {{ .Values.containerSecurityContext.runAsGroup  | quote }}
+          - name: BASIC_USER_ID
+            value: {{ .Values.containerSecurityContext.runAsUser  | quote }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{   include "covid.container.port"  . }}
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          #   initialDelaySeconds: 15
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

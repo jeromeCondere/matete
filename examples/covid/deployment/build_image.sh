@@ -86,7 +86,6 @@ docker run --rm --name postgres -p 5432:5432 \
 curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt", "name": "kovwaltkoi", "description": null, "parameters": {"iok": 545, "ujl": "mfejo"}}' localhost:7070/experiment
 
 
-case class CovidExperimentParameter(recorveryChanceEpsilon: Double, infectionChanceEpsilon: Double, repeat: Int)
 
 curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt", "name": "Covid cobalt", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 3}}' localhost:7070/experiment
 curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt-headless", "name": "Covid cobalt", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 10}}' localhost:7070/experiment
@@ -97,3 +96,22 @@ curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt-headless", "n
 
 
 select * from event_covid where experiment_id = 'cobalt-repeat-1' and country='france' order by ticks asc;
+
+
+
+
+docker exec -it covid_experiment /bin/bash
+
+
+
+curl -H "Content-Type: application/json" -XPOST -d '{"id": "cobalt-headless", "name": "Covid cobalt yak", "description": null, "parameters": {"recorveryChanceEpsilon": 0.0, "infectionChanceEpsilon": 0.0, "repeat": 0}}' http://covid.experiment.local/api/covid-simple/experiment
+
+
+
+docker run  --name covid-headless \
+-e BROKER="host.docker.internal:9092" \
+-e POSTGRES_HOST="postgres:5432" \
+-e BASIC_USER_GROUP=1047 \
+-e BASIC_USER_ID=7000 \
+--add-host "host.docker.internal:host-gateway" \
+jeromecondere/covid-headless:1.0

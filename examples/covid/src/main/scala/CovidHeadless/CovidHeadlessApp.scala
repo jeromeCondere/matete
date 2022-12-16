@@ -46,8 +46,15 @@ object CovidHeadlessApp  extends App {
 
     val logger = LogManager.getLogger("CovidHeadlessApp")
     val broker =  args(0)
-    val modelPath = args(2)
-    val host = args(1)
+    val postgresHost = args(1)
+    val serverApiHost = args(2)
+    val serverApiPort = args(3).toInt
+
+    val postgresUser = if(args.size == 5) "postgres" else args(4)
+    val postgresPassword = if(args.size == 5) "postgres" else args(5)
+    val postgresDb = if(args.size == 5) "db" else args(6)
+
+    val modelPath = if(args.size == 5) args(4) else args(7)
 
     implicit val system = ActorSystem()
 
@@ -90,12 +97,12 @@ object CovidHeadlessApp  extends App {
         case Right(y) => logger.info("the file provided is correct")
     }
 
-    val ckt = CovidHeadlessExperimentServerApi(broker, 7070)(jsons, modelPath)
+    val ckt = CovidHeadlessExperimentServerApi(broker,serverApiHost, serverApiPort)(jsons, modelPath)
 
 
     setTopic("ServerManager")
 
-    val forDB =  new ServerManager(List(broker), host)
+    val forDB =  new ServerManager(List(broker))(host = postgresHost, user = postgresUser, password =  postgresPassword, db =  postgresDb)
     val forDBThread = new Thread {
         override def run {
            forDB.run
@@ -264,7 +271,7 @@ class CovidHeadless(brokers: List[String], agentId: AgentId, modelConfig: CovidM
 
 
 
-class CovidHeadlessExperimentServerApi(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, covidParamFormat: JsonFormat[CovidExperimentParameter]) extends ExperimentServerApi[CovidExperimentParameter](port)  {
+class CovidHeadlessExperimentServerApi(broker: String, host:String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem, covidParamFormat: JsonFormat[CovidExperimentParameter]) extends ExperimentServerApi[CovidExperimentParameter](host,port)  {
     override def runExperiment(experimentConfig: ExperimentConfig[CovidExperimentParameter]) = {
 
         //init covid models from global config            
@@ -327,8 +334,8 @@ class CovidHeadlessExperimentServerApi(broker: String, port: Int = 1010)(jsons: 
 
 object CovidHeadlessExperimentServerApi {
 
-    def apply(broker: String, port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidHeadlessExperimentServerApi = {
+    def apply(broker: String, host: String = "localhost", port: Int = 1010)(jsons: Stream[Either[ParsingFailure, Json]], modelPath: String)(implicit system: ActorSystem): CovidHeadlessExperimentServerApi = {
         import CovidExperimentParameterJsonProtocol._
-        new CovidHeadlessExperimentServerApi(broker, port)(jsons, modelPath)
+        new CovidHeadlessExperimentServerApi(broker, host, port)(jsons, modelPath)
     }
 }

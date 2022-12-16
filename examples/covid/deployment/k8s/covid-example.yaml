@@ -1,42 +1,82 @@
+# podSecurityContext:
+#    fsGroup: 1002
+
+
+# containerSecurityContext:
+#   runAsUser: 1003
+#   runAsGroup: 1002
+
+
+podSecurityContext:
+   fsGroup: 0
+
+
+containerSecurityContext:
+  runAsUser: 1846
+  runAsGroup: 1500
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: covid.experiment.local
+      paths:
+        - path: /ayo/(.*)
+          pathType: Prefix
+  tls: []
+
+
 kafka:
   persistence:
-    storageClass: my-local-storage-class # change to fit your need
-    accessModes: ["ReadWriteMany"] # change to fit your need
+    storageClass: local-storage # change to fit your need
+    accessModes: ["ReadWriteOnce"] # change to fit your need
+    existingClaim: pvc-kafka
     size: 2Gi
 
-
   global:
-    storageClass: my-local-storage-class # change to fit your need
+    storageClass: local-storage # change to fit your need
 
   containerSecurityContext:
-    runAsUser: 1000 #k8 user
+    runAsUser: 1003 #k8 user
     runAsNonRoot: true
 
   podSecurityContext:
-    fsGroup: 1000 #k8 group
+    fsGroup: 1002 #k8 group
   zookeeper:
     persistence:
-      storageClass: my-local-storage-class # change to fit your need
+      storageClass: local-storage # change to fit your need
       accessModes: ["ReadWriteMany"] # change to fit your need
       size: 503Mi
     containerSecurityContext:
-      runAsUser: 1000
+      runAsUser: 1003
     podSecurityContext: 
-      fsGroup: 1000
+      fsGroup: 1002
 
 
+postgresql:
+  primary:
+    persistence:
+      existingClaim: pvc-postgresql
+      accessModes: ["ReadWriteOnce"] # change to fit your need
+      size: 500Mi
+      storageClass: local-storage
 
-
-# ping:
-#   image:
-#     pullPolicy: Always
-# pong:
-#   image:
-#     pullPolicy: Always
+    podSecurityContext:
+      enabled: true
+      fsGroup: 0
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1003
+      runAsGroup: 1002
+      runAsNonRoot: true
+  metrics:
+    containerSecurityContext:
+      enabled: true
 
 resources: 
   limits:
     memory: "1Gi"
   requests:
     memory: "600Mi"
+
 
